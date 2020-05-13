@@ -1,8 +1,5 @@
-
 figma.showUI(__html__);
-
 figma.ui.onmessage = msg => {
-
     // Next
     if (msg.type === 'next') {
         const page = figma.currentPage;
@@ -12,7 +9,8 @@ figma.ui.onmessage = msg => {
         if (frames.length == 0) {
             figma.notify("No Frames to be found");
             skip = true;
-        };
+        }
+        ;
         //nothing selected
         if (selected.length == 0 && !skip) {
             page.selection = [frames[0]];
@@ -31,7 +29,6 @@ figma.ui.onmessage = msg => {
             page.selection = [frames[0]];
         }
     }
-
     if (msg.type === 'exit') {
         figma.closePlugin();
     }
