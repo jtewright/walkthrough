@@ -1,0 +1,12 @@
+<h2>Walkthrough</h2>
+<button id="next">Next</button>
+<button id="exit">Exit</button>
+
+<script>
+document.getElementById('next').onclick = () => {
+  parent.postMessage({ pluginMessage: { type: 'next' } }, '*')
+}
+document.getElementById('exit').onclick = () => {
+  parent.postMessage({ pluginMessage: { type: 'exit' } }, '*')
+}
+</script>
