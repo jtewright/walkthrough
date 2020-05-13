@@ -1,12 +1,33 @@
-<h2>Walkthrough</h2>
-<button id="next">Next</button>
-<button id="exit">Exit</button>
+<html>
+  <p id="selected_node">Click next to start</p>
+  <button id="next">Next</button>
+  <button id="exit">Exit</button>
+  <hr>
+  <br />
+  <textarea id="note" rows="5" cols="30" maxlength="50" wrap="soft"></textarea>
+  <br />
+  <button id="save">Save note</button>
+  <button id="save_next">Save note & Next</button>
 
-<script>
-document.getElementById('next').onclick = () => {
-  parent.postMessage({ pluginMessage: { type: 'next' } }, '*')
-}
-document.getElementById('exit').onclick = () => {
-  parent.postMessage({ pluginMessage: { type: 'exit' } }, '*')
-}
-</script>
+  <script>
+  document.getElementById('next').onclick = () => {
+    parent.postMessage({ pluginMessage: { type: 'next' } }, '*')
+  }
+  document.getElementById('exit').onclick = () => {
+    parent.postMessage({ pluginMessage: { type: 'exit' } }, '*')
+  }
+  document.getElementById('save').onclick = () => {
+    let note = document.getElementById('note').value;
+    parent.postMessage({ pluginMessage: { type: 'note', value: note } }, '*')
+  }
+  document.getElementById('save_next').onclick = () => {
+    let note = document.getElementById('note').value;
+    parent.postMessage({ pluginMessage: { type: 'note_next', value: note } }, '*')
+  }
+  onmessage = (event) => {
+    const message = event.data.pluginMessage;
+    document.getElementById('selected_node').innerHTML = message.name;
+    document.getElementById('note').value = message.note;
+  }
+  </script>
+</html>
