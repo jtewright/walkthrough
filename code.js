@@ -1,4 +1,5 @@
 figma.showUI(__html__);
+loadNode();
 figma.ui.onmessage = msg => {
     switch (msg.type) {
         case 'next':
@@ -14,9 +15,24 @@ figma.ui.onmessage = msg => {
             saveNote(msg.value);
             nextNode();
             break;
+        case 'create_walkthrough':
+            createWalkthrough(msg.value);
+            break;
         default:
     }
 };
+function loadNode() {
+    const page = figma.currentPage;
+    const selection = page.selection;
+    if (selection.length > 0) {
+        const selectedNode = selection[0];
+        const note = selectedNode.getPluginData('nodeNote');
+        const name = selectedNode.name;
+        const message = { name: name, note: note };
+        figma.ui.postMessage(message);
+    }
+}
+;
 function nextNode() {
     const page = figma.currentPage;
     const selected = page.selection;
@@ -24,7 +40,7 @@ function nextNode() {
     let newSelection = [];
     // no frames
     if (nodes.length == 0) {
-        figma.notify("Nothing to be found");
+        figma.notify("No objects to walk through");
         return;
     }
     // one selected
@@ -43,15 +59,31 @@ function nextNode() {
     }
     page.selection = newSelection;
     figma.viewport.scrollAndZoomIntoView(newSelection);
-    const selectedNode = newSelection[0];
-    const note = selectedNode.getPluginData('choi');
-    const name = selectedNode.name;
-    const message = { name: name, note: note };
-    figma.ui.postMessage(message);
+    loadNode();
 }
 ;
 function saveNote(note) {
     const page = figma.currentPage;
     const selected = page.selection[0];
-    selected.setPluginData('choi', note);
+    selected.setPluginData('nodeNote', note);
 }
+;
+function createWalkthrough(name) {
+    const page = figma.currentPage;
+    const selected = page.selection;
+    // no frames
+    if (selected.length == 0) {
+        figma.notify("Please select some objects");
+        return;
+    }
+    const newWalkthrough = { name: name, nodes: selected };
+    let walkthroughsObject = { array: [] };
+    const currentWalkthroughs = page.getPluginData('walkthroughs');
+    if (currentWalkthroughs) {
+        walkthroughsObject = JSON.parse(currentWalkthroughs);
+    }
+    walkthroughsObject.array.push(newWalkthrough);
+    const walkthroughsObjectJSON = JSON.stringify(walkthroughsObject);
+    page.setPluginData('walkthroughs', walkthroughsObjectJSON);
+}
+;
