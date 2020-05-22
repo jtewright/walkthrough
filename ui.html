@@ -1,39 +1,112 @@
 <html>
-  <p id="selected_node">Click next to start</p>
-  <input id="walkthrough_name"></input><button id="create_walkthrough">Create walkthrough</button>
-  <br />
-  <button id="next">Next</button>
-  <button id="exit">Exit</button>
-  <hr>
-  <br />
-  <textarea id="note" rows="3" cols="30" maxlength="50" wrap="soft"></textarea>
-  <br />
-  <button id="save">Save note</button>
-  <button id="save_next">Save note & Next</button>
+  <p id="ui_state"></p> <!--temp-->
+
+  <!--State: home-->
+  <div id="home_state" style="display:block">
+    <button id="new_walkthrough">New walkthrough</button>
+    <p><b>Walkthroughs</b></p>
+    <div id="walkthrough_list">Loading walkthroughs...</div>
+  </div>
+
+  <!--State: editing-->
+  <div id="editing_state" style="display:none">
+    <button id="add_nodes">Add selected</button>
+    <div id="nodes_list"></div>
+    <input id="walkthrough_name"></input><button id="save_walkthrough">Save walkthrough</button>
+  </div>
+
+  <!--State: walking-->
+  <div id="walking_state" style="display:none">
+    <p id="selected_node">Click next to start</p>
+    <button id="next">Next</button>
+    <hr>
+    <textarea id="note" rows="3" cols="30" maxlength="50" wrap="soft"></textarea>
+    <br />
+    <button id="save_note">Save note</button>
+  </div>
 
   <script>
+  onmessage = (event) => {
+    const message = event.data.pluginMessage;
+    switch (message.type) {
+      case 'state':
+        const state = message.state;
+        document.getElementById('ui_state').innerHTML = 'State = ' + state;
+        document.getElementById('home_state').style.display = (state == 'home') ? ("block") : ("none");
+        document.getElementById('walking_state').style.display = (state == 'walking') ? ("block") : ("none");
+        document.getElementById('editing_state').style.display = (state == 'editing' | state == 'new') ? ("block") : ("none");
+        break;
+      case 'note':
+        document.getElementById('selected_node').innerHTML = message.name;
+        document.getElementById('note').value = message.note;
+        break;
+      case 'walkthrough_list':
+        const walkthroughs = message.walkthroughs;
+        let walkthroughListContents = 'Create a walkthrough to get started.';
+        if (walkthroughs.length > 0) {
+          walkthroughListContents = '<ul>';
+          walkthroughs.forEach(walkthrough => {
+            const name = walkthrough.name;
+            walkthroughListContents += '<li>' + name + '<button id="' + name + '_wts">   Start</button><button id="' + name + '_wte">   Edit</button></li>';
+          });
+          walkthroughListContents += '</ul>';
+          walkthroughs.forEach(walkthrough => {
+            const name = walkthrough.name;
+            addWalkthroughListener('start', name + '_wts');
+            addWalkthroughListener('edit', name + '_wte');
+          });
+        }
+        document.getElementById("walkthrough_list").innerHTML = walkthroughListContents;
+        break;
+      case 'editing_update':
+        const name = message.walkthrough.name;
+        const nodes = message.walkthrough.nodes;
+        document.getElementById('walkthrough_name').value = name;
+        let nodeListContents = 'Select and add some elements to the walkthrough.';
+        if (nodes.length > 0) {
+          nodeListContents = '<ul>';
+            nodes.forEach(node => {
+            const name = node.name;
+            nodeListContents += '<li>' + name + ' ' + nodes.indexOf(node) + '</li>';
+          });
+          nodeListContents += '</ul>';
+        }
+        document.getElementById("nodes_list").innerHTML = nodeListContents;
+        break;
+      default:
+        console.error('no ui message handler');
+        return;
+    }
+  }
+  // create new walkthrough
+  document.getElementById('new_walkthrough').onclick = () => {
+    parent.postMessage({ pluginMessage: { type: 'state_new'} }, '*');
+  }
+ 
   document.getElementById('next').onclick = () => {
     parent.postMessage({ pluginMessage: { type: 'next' } }, '*');
   }
-  document.getElementById('create_walkthrough').onclick = () => {
+  document.getElementById('add_nodes').onclick = () => {
+    parent.postMessage({ pluginMessage: { type: 'add_nodes' }}, '*');
+  }
+  document.getElementById('save_walkthrough').onclick = () => {
     const name = document.getElementById('walkthrough_name').value;
-    parent.postMessage({ pluginMessage: { type: 'create_walkthrough', value: name }}, '*');
+    parent.postMessage({ pluginMessage: { type: 'save_walkthrough', value: name }}, '*');
   }
-  document.getElementById('exit').onclick = () => {
-    parent.postMessage({ pluginMessage: { type: 'exit' } }, '*');
-  }
-  document.getElementById('save').onclick = () => {
+  document.getElementById('save_note').onclick = () => {
     let note = document.getElementById('note').value;
-    parent.postMessage({ pluginMessage: { type: 'note', value: note } }, '*');
+    parent.postMessage({ pluginMessage: { type: 'save_note', value: note } }, '*');
   }
+  /*
   document.getElementById('save_next').onclick = () => {
     let note = document.getElementById('note').value;
     parent.postMessage({ pluginMessage: { type: 'note_next', value: note } }, '*');
   }
-  onmessage = (event) => {
-    const message = event.data.pluginMessage;
-    document.getElementById('selected_node').innerHTML = message.name;
-    document.getElementById('note').value = message.note;
+  */
+  function addWalkthroughListener(type, id) {
+    document.getElementById(id).onclick = () => {
+      parent.postMessage({ pluginMessage: { type: type, value: id } }, '*');
+    }
   }
   </script>
 </html>
