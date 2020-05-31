@@ -36,10 +36,6 @@
         document.getElementById('walking_state').style.display = (state == 'walking') ? ("block") : ("none");
         document.getElementById('editing_state').style.display = (state == 'editing' | state == 'new') ? ("block") : ("none");
         break;
-      case 'note':
-        document.getElementById('selected_node').innerHTML = message.name;
-        document.getElementById('note').value = message.note;
-        break;
       case 'walkthrough_list':
         const walkthroughs = message.walkthroughs;
         let walkthroughListContents = 'Create a walkthrough to get started.';
@@ -66,10 +62,6 @@
           });
         }
         break;
-      case 'editing_clear':
-        document.getElementById('walkthrough_name').value = null;
-        document.getElementById("nodes_list").innerHTML = null;
-        break;
       case 'editing_update':
         const name = message.walkthrough.name;
         const nodes = message.walkthrough.nodes;
@@ -78,9 +70,9 @@
         if (nodes.length > 0) {
           nodeListContents = '<ul>';
             nodes.forEach(node => {
-            const name = node.name;
-            const id = node.id;
-            nodeListContents += '<li>' + name;
+              const name = node.name;
+              const id = node.id;
+              nodeListContents += '<li>' + name;
               nodeListContents +=  ' ' + nodes.indexOf(node);
               nodeListContents +=  ' ' + getButtonString(id, 'up');
               nodeListContents +=  ' ' + getButtonString(id, 'down');
@@ -90,13 +82,29 @@
           nodeListContents += '</ul>';
         }
         document.getElementById("nodes_list").innerHTML = nodeListContents;
+        if (nodes.length > 0) {
+          nodes.forEach(node => {
+            const id = node.id;
+            addWalkthroughListener('up', id + '_nup');
+            addWalkthroughListener('down', id + '_ndn');
+            addWalkthroughListener('remove', id + '_nrm');
+          });
+        }
+        break;
+      case 'editing_clear':
+        document.getElementById('walkthrough_name').value = null;
+        document.getElementById("nodes_list").innerHTML = null;
+        break;
+      case 'note':
+        document.getElementById('selected_node').innerHTML = message.name;
+        document.getElementById('note').value = message.note;
         break;
       default:
         console.error('no ui message handler');
         return;
     }
   }
-  // create new walkthrough
+  // creating walkthrough
   document.getElementById('new_walkthrough').onclick = () => {
     parent.postMessage({ pluginMessage: { type: 'state_new'} }, '*');
   }
@@ -110,29 +118,18 @@
   document.getElementById('exit_new').onclick = () => {
     parent.postMessage({ pluginMessage: { type: 'state_home'}}, '*');
   }
-
+  // walking through
   document.getElementById('next').onclick = () => {
     parent.postMessage({ pluginMessage: { type: 'next' } }, '*');
-  }
-  document.getElementById('exit_walking').onclick = () => {
-    parent.postMessage({ pluginMessage: { type: 'state_home'}}, '*');
   }
   document.getElementById('save_note').onclick = () => {
     let note = document.getElementById('note').value;
     parent.postMessage({ pluginMessage: { type: 'save_note', value: note } }, '*');
   }
-  /*
-  document.getElementById('save_next').onclick = () => {
-    let note = document.getElementById('note').value;
-    parent.postMessage({ pluginMessage: { type: 'note_next', value: note } }, '*');
+  document.getElementById('exit_walking').onclick = () => {
+    parent.postMessage({ pluginMessage: { type: 'state_home'}}, '*');
   }
-  */
-  function addWalkthroughListener(type, id) {
-    document.getElementById(id).onclick = () => {
-      parent.postMessage({ pluginMessage: { type: type, value: id } }, '*');
-    }
-  }
-  //
+  // helper functions
   function getButtonString(id, type) {
     let label = null;
     let buttonId = null;
@@ -151,20 +148,25 @@
         break;
       case 'up':
         label = 'Up';
-        buttonId = id + '_nu';
+        buttonId = id + '_nup';
         break;
       case 'down':
         label = 'Down';
-        buttonId = id + '_nd';
+        buttonId = id + '_ndn';
         break;
       case 'remove':
         label = 'Remove';
-        buttonId = id + '_nr';
+        buttonId = id + '_nrm';
         break;
       default:
         console.error('no button type');
     }
     return '<button id="' + buttonId + '">' + label + '</button>';
+  }
+  function addWalkthroughListener(type, id) {
+    document.getElementById(id).onclick = () => {
+      parent.postMessage({ pluginMessage: { type: type, value: id } }, '*');
+    }
   }
   </script>
 </html>
