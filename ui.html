@@ -1,5 +1,4 @@
 <html>
-  <p id="ui_state"></p> <!--temp-->
 
   <!--State: home-->
   <div id="home_state" style="display:block">
@@ -10,8 +9,9 @@
 
   <!--State: editing-->
   <div id="editing_state" style="display:none">
-    <button id="add_nodes">Add selected</button>
-    <div id="nodes_list"></div>
+    <button id="add_nodes">Add selected</button><button id="exit_new">Cancel</button>
+    <hr>
+    <div id="nodes_list">Select an element or two and click Add selected</div>
     <input id="walkthrough_name"></input><button id="save_walkthrough">Save walkthrough</button>
   </div>
 
@@ -19,6 +19,7 @@
   <div id="walking_state" style="display:none">
     <p id="selected_node">Click next to start</p>
     <button id="next">Next</button>
+    <button id="exit_walking">Exit</button>
     <hr>
     <textarea id="note" rows="3" cols="30" maxlength="50" wrap="soft"></textarea>
     <br />
@@ -31,7 +32,6 @@
     switch (message.type) {
       case 'state':
         const state = message.state;
-        document.getElementById('ui_state').innerHTML = 'State = ' + state;
         document.getElementById('home_state').style.display = (state == 'home') ? ("block") : ("none");
         document.getElementById('walking_state').style.display = (state == 'walking') ? ("block") : ("none");
         document.getElementById('editing_state').style.display = (state == 'editing' | state == 'new') ? ("block") : ("none");
@@ -47,16 +47,28 @@
           walkthroughListContents = '<ul>';
           walkthroughs.forEach(walkthrough => {
             const name = walkthrough.name;
-            walkthroughListContents += '<li>' + name + '<button id="' + name + '_wts">   Start</button><button id="' + name + '_wte">   Edit</button></li>';
+            const id = walkthrough.id;
+            walkthroughListContents += '<li>' + name;
+            walkthroughListContents += getButtonString(id, 'start');
+            walkthroughListContents += getButtonString(id, 'edit');
+            walkthroughListContents += getButtonString(id, 'delete');
+            walkthroughListContents += '</li>';
           });
           walkthroughListContents += '</ul>';
-          walkthroughs.forEach(walkthrough => {
-            const name = walkthrough.name;
-            addWalkthroughListener('start', name + '_wts');
-            addWalkthroughListener('edit', name + '_wte');
-          });
         }
         document.getElementById("walkthrough_list").innerHTML = walkthroughListContents;
+        if (walkthroughs.length > 0) {
+          walkthroughs.forEach(walkthrough => {
+            const id = walkthrough.id;
+            addWalkthroughListener('start', id + '_wts');
+            addWalkthroughListener('edit', id + '_wte');
+            addWalkthroughListener('delete', id + '_wtd');
+          });
+        }
+        break;
+      case 'editing_clear':
+        document.getElementById('walkthrough_name').value = null;
+        document.getElementById("nodes_list").innerHTML = null;
         break;
       case 'editing_update':
         const name = message.walkthrough.name;
@@ -67,7 +79,13 @@
           nodeListContents = '<ul>';
             nodes.forEach(node => {
             const name = node.name;
-            nodeListContents += '<li>' + name + ' ' + nodes.indexOf(node) + '</li>';
+            const id = node.id;
+            nodeListContents += '<li>' + name;
+              nodeListContents +=  ' ' + nodes.indexOf(node);
+              nodeListContents +=  ' ' + getButtonString(id, 'up');
+              nodeListContents +=  ' ' + getButtonString(id, 'down');
+              nodeListContents +=  ' ' + getButtonString(id, 'remove');
+              nodeListContents += '</li>';
           });
           nodeListContents += '</ul>';
         }
@@ -82,16 +100,22 @@
   document.getElementById('new_walkthrough').onclick = () => {
     parent.postMessage({ pluginMessage: { type: 'state_new'} }, '*');
   }
- 
-  document.getElementById('next').onclick = () => {
-    parent.postMessage({ pluginMessage: { type: 'next' } }, '*');
-  }
   document.getElementById('add_nodes').onclick = () => {
     parent.postMessage({ pluginMessage: { type: 'add_nodes' }}, '*');
   }
   document.getElementById('save_walkthrough').onclick = () => {
     const name = document.getElementById('walkthrough_name').value;
     parent.postMessage({ pluginMessage: { type: 'save_walkthrough', value: name }}, '*');
+  }
+  document.getElementById('exit_new').onclick = () => {
+    parent.postMessage({ pluginMessage: { type: 'state_home'}}, '*');
+  }
+
+  document.getElementById('next').onclick = () => {
+    parent.postMessage({ pluginMessage: { type: 'next' } }, '*');
+  }
+  document.getElementById('exit_walking').onclick = () => {
+    parent.postMessage({ pluginMessage: { type: 'state_home'}}, '*');
   }
   document.getElementById('save_note').onclick = () => {
     let note = document.getElementById('note').value;
@@ -107,6 +131,40 @@
     document.getElementById(id).onclick = () => {
       parent.postMessage({ pluginMessage: { type: type, value: id } }, '*');
     }
+  }
+  //
+  function getButtonString(id, type) {
+    let label = null;
+    let buttonId = null;
+    switch(type) {
+      case 'start':
+        label = 'Start';
+        buttonId = id + '_wts';
+        break;
+      case 'edit':
+        label = 'Edit';
+        buttonId = id + '_wte';
+        break;
+      case 'delete':
+        label = 'Delete';
+        buttonId = id + '_wtd';
+        break;
+      case 'up':
+        label = 'Up';
+        buttonId = id + '_nu';
+        break;
+      case 'down':
+        label = 'Down';
+        buttonId = id + '_nd';
+        break;
+      case 'remove':
+        label = 'Remove';
+        buttonId = id + '_nr';
+        break;
+      default:
+        console.error('no button type');
+    }
+    return '<button id="' + buttonId + '">' + label + '</button>';
   }
   </script>
 </html>
