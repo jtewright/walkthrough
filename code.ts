@@ -25,10 +25,6 @@ figma.ui.onmessage = msg => {
         case 'save_note':
             saveNote(msg.value);
             break;
-        case 'note_next':
-            saveNote(msg.value);
-            nextNode(null);
-            break;
         case 'save_walkthrough':
             const name = msg.value;
             saveWalkthrough(name);
@@ -107,6 +103,9 @@ figma.on("close", function() {
     editingWalkthrough = null;
 })
 
+/*
+    Loaders
+*/
 function loadWalkthroughs() {
     let walkthroughs = getWalkthroughsArray();
     const message = {
@@ -116,10 +115,35 @@ function loadWalkthroughs() {
     figma.ui.postMessage(message);
 }
 
+function updateEditingNodes() {
+    let uiWalkthrough = {
+        id: editingWalkthrough.id,
+        name: editingWalkthrough.name,
+        nodes: editingWalkthrough.nodes.map(n => {
+            let node = figma.getNodeById(n.id);
+            return {id: node.id, name: node.name};
+        }),
+    };
+    const message = {type: 'editing_update', walkthrough: uiWalkthrough};
+    figma.ui.postMessage(message);
+}
+
+function loadNode() {
+    let page = figma.currentPage;
+    const selection = page.selection;
+    const walkthroughID = currentWalkthrough.id;
+    if (selection.length > 0) {
+        const selectedNode = selection[0];
+        const note = selectedNode.getPluginData(walkthroughID);
+        const name = selectedNode.name;
+        const message = {type: 'note', name: name, note: note};
+        figma.ui.postMessage(message);
+    }
+}
+
 /*
     Walking through, saving notes
 */
-
 function nextNode(walkthroughID) {
     let page =figma.currentPage;
     const selected = page.selection;
@@ -168,19 +192,6 @@ function nextNode(walkthroughID) {
     loadNode();
 }
 
-function loadNode() {
-    let page = figma.currentPage;
-    const selection = page.selection;
-    const walkthroughID = currentWalkthrough.id;
-    if (selection.length > 0) {
-        const selectedNode = selection[0];
-        const note = selectedNode.getPluginData(walkthroughID);
-        const name = selectedNode.name;
-        const message = {type: 'note', name: name, note: note};
-        figma.ui.postMessage(message);
-    }
-}
-
 function saveNote(note) {
     let page = figma.currentPage;
     let selected = page.selection[0];
@@ -198,7 +209,7 @@ function addNodesToWalkthrough(suppressNotify) {
     // no objects selected
     if (selected.length == 0) {
         if (!suppressNotify) {
-            figma.notify("Please select some objects");
+            figma.notify('Please select some objects', {timeout: 1000});
         }
         return;
     }
@@ -207,21 +218,13 @@ function addNodesToWalkthrough(suppressNotify) {
     if (editingWalkthrough != null) {
         walkthrough = editingWalkthrough;
         const currentNodes = walkthrough.nodes;
-        let newNodes = [];
-        let dupeNodes = [];
-        selected.forEach(node => {
-            if (currentNodes.indexOf(node) == -1) {
-                newNodes = [...newNodes, node];
-            }
-            else {
-                dupeNodes = [...dupeNodes, node];
-            }
-        });
+        const newNodes = selected.filter(node => currentNodes.indexOf(node) == -1);
+        const dupeNodes = selected.filter(node => currentNodes.indexOf(node) !== -1);
         const dupLen = dupeNodes.length;
         if (dupLen > 0) {
             const message = (dupLen > 1) ? 
                 dupLen + ' elements already in walkthrough' : dupeNodes[0].name + ' already in walkthrough';
-            figma.notify(message);
+            figma.notify(message, {timeout: 1000});
         }
         walkthrough.nodes = [...currentNodes, ...newNodes];
     }
@@ -237,46 +240,18 @@ function addNodesToWalkthrough(suppressNotify) {
     updateEditingNodes();
 }
 
-function updateEditingNodes() {
-    let uiWalkthrough = {
-        id: editingWalkthrough.id,
-        name: editingWalkthrough.name,
-        nodes: editingWalkthrough.nodes.map(n => {
-            let node = figma.getNodeById(n.id);
-            return {id: node.id, name: node.name};
-        }),
-    };
-    const message = {type: 'editing_update', walkthrough: uiWalkthrough};
-    figma.ui.postMessage(message);
-}
-
 function upNode(nodeID) {
     let walkthrough = editingWalkthrough;
     let nodes = walkthrough.nodes;
     let node = nodes.find(node => node.id == nodeID);
     const currentIndex = nodes.indexOf(node);
     if (currentIndex == 0) {
-        figma.notify('Already at the start');
+        figma.notify('Already at the start', {timeout: 1000});
     }
     const newIndex = currentIndex - 1;
-    let extracted = null;
-    let before = [];
-    let after = [];
-    nodes.forEach((node, i) => {
-        if (node.id == nodeID) {
-            extracted = node;
-            return;
-        }
-        else if (i < newIndex) {
-            before = [...before, node];
-            return;
-        }
-        else if (i >= newIndex) {
-            after = [...after, node];
-            return;
-        }
-    });
-    walkthrough.nodes = [...before, extracted, ...after];
+    const before = nodes.filter((n, i) => (n.id !== nodeID && i < newIndex));
+    const after = nodes.filter((n, i) => (n.id !== nodeID && i >= newIndex));
+    walkthrough.nodes = [...before, node, ...after];
     editingWalkthrough = walkthrough;
     updateEditingNodes();
 }
@@ -287,50 +262,33 @@ function downNode(nodeID) {
     let node = nodes.find(node => node.id == nodeID);
     const currentIndex = nodes.indexOf(node);
     if (currentIndex == (nodes.length - 1)) {
-        figma.notify('Already at the end');
+        figma.notify('Already at the end', {timeout: 1000});
     }
     const newIndex = currentIndex + 1;
-    let extracted = null;
-    let before = [];
-    let after = [];
-    nodes.forEach((node, i) => {
-        if (node.id == nodeID) {
-            extracted = node;
-            return;
-        }
-        else if (i <= newIndex) {
-            before = [...before, node];
-            return;
-        }
-        else if (i > newIndex) {
-            after = [...after, node];
-            return;
-        }
-    });
-    walkthrough.nodes = [...before, extracted, ...after];
+    const before = nodes.filter((n, i) => (n.id !== nodeID && i <= newIndex));
+    const after = nodes.filter((n, i) => (n.id !== nodeID && i > newIndex));
+    walkthrough.nodes = [...before, node, ...after];
     editingWalkthrough = walkthrough;
     updateEditingNodes();
 }
 
 function removeNode(nodeID) {
-    let walkthrough = (currentState == STATE_EDITING) ? editingWalkthrough : currentWalkthrough;
+    let walkthrough = (currentState == STATE_WALKING) ? currentWalkthrough : editingWalkthrough;
     let nodes = walkthrough.nodes;
-    nodes = nodes.filter(node => {
-        return node.id !== nodeID;
-    });
+    nodes = nodes.filter(node => node.id !== nodeID);
     walkthrough.nodes = nodes;
-    if (currentState == STATE_EDITING) {
-        editingWalkthrough = walkthrough;
-        updateEditingNodes();
+    if (currentState == STATE_WALKING) {
+        currentWalkthrough = walkthrough;
     }
     else {
-        currentWalkthrough = walkthrough;
+         editingWalkthrough = walkthrough;
+         updateEditingNodes();
     }
 }
 
 function saveWalkthrough(name) {
     if (!name || name == undefined) {
-        figma.notify("Please name your Walkthrough");
+        figma.notify('Please name your Walkthrough', {timeout: 1000});
         return;
     }
     let page = figma.currentPage;
