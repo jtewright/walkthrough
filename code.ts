@@ -85,7 +85,7 @@ function updateUIState(newState) {
     if (currentState == STATE_WALKING && newState == STATE_HOME) {
         currentWalkthrough = null;
     }
-    
+
     // changing state
     currentState = newState;
     const message = {type: 'state', state: currentState};
@@ -94,6 +94,8 @@ function updateUIState(newState) {
     // initializing new states
     if (newState == STATE_HOME) {
         loadWalkthroughs();
+        editingWalkthrough = null;
+        currentWalkthrough = null;
     }
     if (newState == STATE_NEW || newState == STATE_EDITING) {
         addNodesToWalkthrough(true);
@@ -121,34 +123,45 @@ function loadWalkthroughs() {
 function nextNode(walkthroughID) {
     let page =figma.currentPage;
     const selected = page.selection;
+    // if not walking through and started walkthrough first thingy has been deleted
     // not already walking through
     if (currentWalkthrough == null && walkthroughID) {
         currentWalkthrough = getWalkthrough(walkthroughID);
     }
     let nodes = currentWalkthrough.nodes;
-    let newSelectionID = currentWalkthrough.nodes[0].id;
     let nextIndex = 0;
+    let newSelectionID = currentWalkthrough.nodes[nextIndex].id;
 
-    // one selected
+    // one selected, goes to next node
     if (walkthroughID == null && selected.length == 1) {
         const selectedNodeID = selected[0].id;
         const selectedNode = nodes.find(node => node.id == selectedNodeID);
         const selectedNodeIndex = nodes.indexOf(selectedNode);
         nextIndex = selectedNodeIndex + 1;
-
         // loop
         if (nextIndex >= nodes.length) {
             nextIndex = 0;
         }
-
         newSelectionID = nodes[nextIndex].id;
     }
-    const newSelectedNode = figma.getNodeById(newSelectionID)
-    const newSelection = [newSelectedNode];
-    if (newSelection[0] == null) {
-        console.error('no node found');
-        return;
+    let newSelectedNode = figma.getNodeById(newSelectionID)
+    if (newSelectedNode == null) {
+        // node has been deleted
+        removeNode(newSelectionID);
+        saveWalkthrough(currentWalkthrough.name);
+        nextIndex = nextIndex + 1;
+        if (nextIndex >= nodes.length) {
+            nextIndex = 0;
+        }
+        newSelectionID = nodes[nextIndex].id;
+        newSelectedNode = figma.getNodeById(newSelectionID);
+        if (newSelectedNode == null) {
+            deleteWalkthrough(currentWalkthrough.id);
+            updateUIState(STATE_HOME);
+            return;
+        }
     }
+    const newSelection = [newSelectedNode];
     figma.currentPage.selection = newSelection;
     figma.viewport.scrollAndZoomIntoView(newSelection);
     figma.notify((nextIndex + 1) + ' — ' + newSelectedNode.name, {timeout: 1000});
@@ -156,7 +169,7 @@ function nextNode(walkthroughID) {
 }
 
 function loadNode() {
-    let page =figma.currentPage;
+    let page = figma.currentPage;
     const selection = page.selection;
     const walkthroughID = currentWalkthrough.id;
     if (selection.length > 0) {
@@ -300,14 +313,19 @@ function downNode(nodeID) {
 }
 
 function removeNode(nodeID) {
-    let walkthrough = editingWalkthrough;
+    let walkthrough = (currentState == STATE_EDITING) ? editingWalkthrough : currentWalkthrough;
     let nodes = walkthrough.nodes;
     nodes = nodes.filter(node => {
         return node.id !== nodeID;
     });
     walkthrough.nodes = nodes;
-    editingWalkthrough = walkthrough;
-    updateEditingNodes();
+    if (currentState == STATE_EDITING) {
+        editingWalkthrough = walkthrough;
+        updateEditingNodes();
+    }
+    else {
+        currentWalkthrough = walkthrough;
+    }
 }
 
 function saveWalkthrough(name) {
@@ -315,14 +333,14 @@ function saveWalkthrough(name) {
         figma.notify("Please name your Walkthrough");
         return;
     }
-    let page =figma.currentPage;
-    let newWalkthrough = editingWalkthrough;
+    let page = figma.currentPage;
+    let newWalkthrough = (currentState == STATE_WALKING) ? currentWalkthrough : editingWalkthrough;
     newWalkthrough.name = name;
 
     let walkthroughsObject = getWalkthroughsObject();
     let walkthroughs = walkthroughsObject.array;
 
-    if (currentState == STATE_EDITING) {
+    if (currentState == STATE_EDITING || currentState == STATE_WALKING) {
         walkthroughs = walkthroughs.map(walkthrough => {
             if (walkthrough.id == newWalkthrough.id) {
                 return newWalkthrough;
@@ -337,8 +355,12 @@ function saveWalkthrough(name) {
     walkthroughsObject = {array: walkthroughs};
     const walkthroughsObjectJSON = JSON.stringify(walkthroughsObject);
     page.setPluginData('walkthroughs', walkthroughsObjectJSON);
-
-    updateUIState(STATE_HOME);
+    if (currentState == STATE_EDITING || currentState == STATE_NEW) {
+        updateUIState(STATE_HOME);
+    }
+    else if (currentState == STATE_WALKING) {
+        currentWalkthrough = getWalkthrough(newWalkthrough.id);
+    }
 }
 
 function editWalkthrough(walkthroughID) {
