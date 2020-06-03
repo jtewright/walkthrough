@@ -21,7 +21,12 @@
     <button id="next">Next</button>
     <button id="exit_walking">Exit</button>
     <hr>
-    <textarea id="note" rows="3" cols="30" maxlength="50" wrap="soft"></textarea>
+    <p id="note"></p>
+  </div>
+
+  <!--State: noting-->
+  <div id="noting_state">
+    <textarea id="noting" rows="3" cols="30" maxlength="50" wrap="soft"></textarea>
     <br />
     <button id="save_note">Save note</button>
   </div>
@@ -73,7 +78,6 @@
               const name = node.name;
               const id = node.id;
               nodeListContents += '<li>' + name;
-              nodeListContents +=  ' ' + nodes.indexOf(node);
               nodeListContents +=  ' ' + getButtonString(id, 'up');
               nodeListContents +=  ' ' + getButtonString(id, 'down');
               nodeListContents +=  ' ' + getButtonString(id, 'remove');
@@ -97,7 +101,7 @@
         break;
       case 'note':
         document.getElementById('selected_node').innerHTML = message.name;
-        document.getElementById('note').value = message.note;
+        document.getElementById('note').innerHTML = message.note;
         break;
       default:
         console.error('no ui message handler');
