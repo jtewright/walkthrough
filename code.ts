@@ -2,9 +2,11 @@ const STATE_HOME = 'home';
 const STATE_EDITING = 'editing';
 const STATE_WALKING = 'walking';
 const STATE_NEW = 'new';
+const STATE_NOTE = 'note';
 
 let currentWalkthrough = null;
 let editingWalkthrough = null;
+let editingNode = null;
 let currentState = null;
 
 figma.showUI(__html__);
@@ -32,6 +34,7 @@ figma.ui.onmessage = msg => {
         case 'start':
         case 'edit':
         case 'delete':
+        case 'note':
         case 'up':
         case 'down':
         case 'remove':
@@ -48,6 +51,9 @@ figma.ui.onmessage = msg => {
                     break;
                 case 'delete':
                     deleteWalkthrough(id);
+                    break;
+                case 'note':
+                    editNodeNote(id);
                     break;
                 case 'up':
                     upNode(id);
@@ -93,7 +99,7 @@ function updateUIState(newState) {
         editingWalkthrough = null;
         currentWalkthrough = null;
     }
-    if (newState == STATE_NEW || newState == STATE_EDITING) {
+    if (newState == STATE_NEW) {
         addNodesToWalkthrough(true);
     }
 }
@@ -128,15 +134,37 @@ function updateEditingNodes() {
     figma.ui.postMessage(message);
 }
 
+function editNodeNote(nodeID) {
+    editingNode = figma.getNodeById(nodeID);
+    const walkthroughID = (currentState == STATE_WALKING) ? 
+        currentWalkthrough.id : editingWalkthrough.id;
+    const note = editingNode.getPluginData(walkthroughID);
+    const name = editingNode.name;
+    const message = {
+        type: 'noting',
+        id: nodeID,
+        name: name,
+        note: note
+    };
+    updateUIState(STATE_NOTE);
+    figma.ui.postMessage(message);
+}
+
 function loadNode() {
     let page = figma.currentPage;
     const selection = page.selection;
-    const walkthroughID = currentWalkthrough.id;
+    const walkthroughID = currentWalkthrough ?
+        currentWalkthrough.id : editingWalkthrough.id;
     if (selection.length > 0) {
         const selectedNode = selection[0];
         const note = selectedNode.getPluginData(walkthroughID);
         const name = selectedNode.name;
-        const message = {type: 'note', name: name, note: note};
+        const message = {
+            type: 'note',
+            id: selectedNode.id,
+            name: name,
+            note: note
+        };
         figma.ui.postMessage(message);
     }
 }
@@ -193,10 +221,11 @@ function nextNode(walkthroughID) {
 }
 
 function saveNote(note) {
-    let page = figma.currentPage;
-    let selected = page.selection[0];
-    const walkthroughID = currentWalkthrough.id;
-    selected.setPluginData(walkthroughID, note);
+    const walkthroughID = currentWalkthrough ? currentWalkthrough.id : editingWalkthrough.id;
+    editingNode.setPluginData(walkthroughID, note);
+    updateUIState(currentWalkthrough ? STATE_WALKING : STATE_EDITING);
+    editingNode = null;
+    loadNode();
 }
 
 /*

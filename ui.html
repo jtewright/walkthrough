@@ -18,14 +18,16 @@
   <!--State: walking-->
   <div id="walking_state" style="display:none">
     <p id="selected_node">Click next to start</p>
-    <button id="next">Next</button>
-    <button id="exit_walking">Exit</button>
+    <button id="next">➜</button>
+    <button id="edit_note">✎</button>
+    <button id="exit_walking">✕</button>
     <hr>
     <p id="note"></p>
   </div>
 
   <!--State: noting-->
   <div id="noting_state">
+    <p id="editing_node">Click next to start</p>
     <textarea id="noting" rows="3" cols="30" maxlength="50" wrap="soft"></textarea>
     <br />
     <button id="save_note">Save note</button>
@@ -40,6 +42,7 @@
         document.getElementById('home_state').style.display = (state == 'home') ? ("block") : ("none");
         document.getElementById('walking_state').style.display = (state == 'walking') ? ("block") : ("none");
         document.getElementById('editing_state').style.display = (state == 'editing' | state == 'new') ? ("block") : ("none");
+        document.getElementById('noting_state').style.display = (state == 'note') ? ("block") : ("none");
         break;
       case 'walkthrough_list':
         const walkthroughs = message.walkthroughs;
@@ -78,6 +81,7 @@
               const name = node.name;
               const id = node.id;
               nodeListContents += '<li>' + name;
+              nodeListContents +=  ' ' + getButtonString(id, 'note');
               nodeListContents +=  ' ' + getButtonString(id, 'up');
               nodeListContents +=  ' ' + getButtonString(id, 'down');
               nodeListContents +=  ' ' + getButtonString(id, 'remove');
@@ -89,6 +93,7 @@
         if (nodes.length > 0) {
           nodes.forEach(node => {
             const id = node.id;
+            addWalkthroughListener('note', id + '_nno');
             addWalkthroughListener('up', id + '_nup');
             addWalkthroughListener('down', id + '_ndn');
             addWalkthroughListener('remove', id + '_nrm');
@@ -102,6 +107,16 @@
       case 'note':
         document.getElementById('selected_node').innerHTML = message.name;
         document.getElementById('note').innerHTML = message.note;
+        document.getElementById('edit_note').onclick = () => {
+          parent.postMessage({pluginMessage: {
+            type: 'note',
+            value: message.id + '_nno'
+          }},'*');
+        }
+        break;
+      case 'noting':
+        document.getElementById('editing_node').innerHTML = message.name;
+        document.getElementById('noting').value = message.note;
         break;
       default:
         console.error('no ui message handler');
@@ -127,7 +142,7 @@
     parent.postMessage({ pluginMessage: { type: 'next' } }, '*');
   }
   document.getElementById('save_note').onclick = () => {
-    let note = document.getElementById('note').value;
+    let note = document.getElementById('noting').value;
     parent.postMessage({ pluginMessage: { type: 'save_note', value: note } }, '*');
   }
   document.getElementById('exit_walking').onclick = () => {
@@ -147,8 +162,12 @@
         buttonId = id + '_wte';
         break;
       case 'delete':
-        label = 'Delete';
+        label = '⊗';
         buttonId = id + '_wtd';
+        break;
+      case 'note':
+        label = '✎';
+        buttonId = id + '_nno';
         break;
       case 'up':
         label = '↑';
