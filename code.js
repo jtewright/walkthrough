@@ -8,6 +8,7 @@ let editingWalkthrough = null;
 let editingNode = null;
 let currentState = null;
 figma.showUI(__html__);
+figma.ui.resize(300, 400);
 updateUIState(STATE_HOME);
 figma.ui.onmessage = msg => {
     switch (msg.type) {
