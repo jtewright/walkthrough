@@ -1,14 +1,26 @@
 <style>
-    .walkthrough_list {
-        background-color: black;
+    html {
+      font-family: Arial, Helvetica, sans-serif;
+      padding: .5rem;
+    }
+    button {
+      background-color: darkslateblue;
+      color: white;
+      padding: .5rem;
+      border-radius: 5px;
+    }
+    .walkthrough-list {
+      margin: 1rem 0 0;
+      font-size: .7rem;
+      color: grey;
+      font-weight: bold;
     }
 </style>
 <html>
   <!--State: home-->
   <div id="home_state" style="display:block">
-    <button id="new_walkthrough">New walkthrough</button>
-    <p><b>Walkthroughs</b></p>
-    <div id="walkthrough_list" class="walkthrough_list">Loading walkthroughs...</div>
+    <button id="new_walkthrough" class="text-button">Create walkthrough</button>
+    <div id="walkthrough_list" class="walkthrough-list">Loading walkthroughs...</div>
   </div>
 
   <!--State: editing-->
