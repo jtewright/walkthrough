@@ -10,7 +10,7 @@ let editingNode = null;
 let currentState = null;
 
 figma.showUI(__html__);
-figma.ui.resize(300,400);
+figma.ui.resize(400,400);
 updateUIState(STATE_HOME);
 
 figma.ui.onmessage = msg => {
@@ -124,6 +124,7 @@ function loadWalkthroughs() {
 
 function updateEditingNodes() {
     let uiWalkthrough = {
+        state: currentState,
         id: editingWalkthrough.id,
         name: editingWalkthrough.name,
         nodes: editingWalkthrough.nodes.map(n => {
@@ -365,7 +366,7 @@ function deleteWalkthrough(walkthroughID) {
     const walkthroughsObjectJSON = JSON.stringify(walkthroughsObject);
     let page = figma.currentPage
     page.setPluginData('walkthroughs', walkthroughsObjectJSON);
-    loadWalkthroughs();
+    updateUIState(STATE_HOME);
 }
 
 /*

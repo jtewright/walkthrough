@@ -4,52 +4,83 @@
       padding: 0;
       margin: 0;
       background-color: #e5e5e5;
+      font-size: 11pt;
+      overflow: hidden;
+      height: 100%;
     }
-    input {
-      outline: none;
-      padding: .3rem .5rem;
-      border-radius: .5rem;
-      background-color: lightgray;
-      border: none;
-      font-size: .8rem;
+    div {
+      padding: 0;
       margin: 0;
     }
+    input {
+      font-family: inherit;
+      outline: none;
+      border: none;
+      padding: .3rem .5rem;
+      border-radius: .3rem;
+      background-color: lightgray;
+      margin: 0;
+      font-size: 1rem;
+    }
     button:hover {
-      background-color: darkblue;
+      color: black;
     }
     button {
-      outline: none;
-      padding: .3rem .5rem;
-      border-radius: .5rem;
-      color: white;
-      font-size: .7rem;
-      font-weight: bold;
-      background-color: darkslateblue;
+      background: none;
       border: none;
+      outline: none;
+      margin: 0;
+      padding: .4rem .6rem;
+      border-radius: .3rem;
+      color: darkblue;
+      font-family: inherit;
+      font-size: 1rem;
+      font-weight: bold;
       cursor: pointer;
+      vertical-align: middle;
     }
     button.text {
-      background: none;
-    }
-    button.text:hover {
-      color: darkblue;
-    }
-    button.grey {
-      background: grey;
+      color: darkslategrey;
 
     }
-    button.grey:hover {
-      color: darkblue;
+    button.text:hover {
+      color: black;
     }
-    button.outline {
-      background: #f2f2f2;
-      color: #a9a9a9;
-      padding: .2rem .4rem;
-      margin-left: .2rem;
-      font-weight: normal;
+    button.red {
+      width: 100%;
+      background-color: #dddddd;
+      color: darkred;
     }
-    button.outline:hover {
-      color: slategray;
+    button.red:hover {
+      background-color: silver;
+      color: black;
+    }
+    button.action {
+      background-color: white;
+    }
+    button.action:hover {
+      background: darkblue;
+      color: white;
+    }
+    button.icon {
+      margin: 0 .5rem 0 0;
+      padding: .2rem;
+      font-size: 1.3rem;
+      background: none;
+      color: dimgrey;
+    }
+    button.icon:hover {
+      color: black;
+    }
+    button.icon-delete {
+      margin: 0;
+      padding: .2rem 0 .2rem;
+      font-size: 1.6rem;
+      background: none;
+      color: dimgrey;
+    }
+    button.icon-delete:hover {
+      color: red;
     }
     table {
       padding: 0;
@@ -58,29 +89,32 @@
       width: 100%;
     }
     tr {
+      margin: 0 0 .5rem 0;
     }
-    td {
-      padding: .4rem;
-      margin: 0;
-      border: none;
+    .list {
+      padding: .5rem 1rem;
+      height: calc(100% - 105px);
+      overflow: auto;
+      scroll-behavior: smooth;
     }
     .placeholder {
-        font-size: .7rem;
         color: #a9a9a9;
         font-weight: bold;
         text-align: center;
-        padding: 3rem 1rem;
+        padding: 2rem 1rem;
     }
     .toolbar {
-      background-color: #a9a9a9;
+      background-color: #dddddd;
+      padding: .3rem .4rem .4rem;
+      height: 40px;
     }
     .table-right {
       text-align: right;
-      padding-left: 0;
     }
     .footer {
-      background-color: silver;
+      background-color: #dddddd;
       position: fixed;
+      height: 40px;
       bottom: 0;
       left: 0;
       right: 0;
@@ -103,7 +137,7 @@
       </tr>
     </table>
     <div id="walkthrough_list" class="list">
-      <p>Loading...</p>
+      <p class="placeholder">Loading...</p>
     </div>
   </div>
 
@@ -112,7 +146,7 @@
     <table class="toolbar">
       <tr>
         <td>
-          <button id="add_nodes" class="grey">Add selected</button>
+          <button id="add_nodes" class="action">Add selected</button>
         </td>
         <td class="table-right">
           <button id="exit_new" class="text">Cancel</button>
@@ -167,17 +201,17 @@
         const walkthroughs = message.walkthroughs;
         let walkthroughListContents = '<p class="placeholder">Create a walkthrough to get started</p>';
         if (walkthroughs.length > 0) {
-          walkthroughListContents = '<ul>';
+          walkthroughListContents = '<table>';
           walkthroughs.forEach(walkthrough => {
             const name = walkthrough.name;
             const id = walkthrough.id;
-            walkthroughListContents += '<li>' + name;
-            walkthroughListContents += getButtonString(id, 'start');
-            walkthroughListContents += getButtonString(id, 'edit');
-            walkthroughListContents += getButtonString(id, 'delete');
-            walkthroughListContents += '</li>';
+            walkthroughListContents += '<tr><td>' + name + '</td>';
+            walkthroughListContents += '<td class="table-right">';
+            walkthroughListContents += getButton(id, 'edit');
+            walkthroughListContents += getButton(id, 'start');
+            walkthroughListContents += '</td></tr>';
           });
-          walkthroughListContents += '</ul>';
+          walkthroughListContents += '</table>';
         }
         document.getElementById("walkthrough_list").innerHTML = walkthroughListContents;
         if (walkthroughs.length > 0) {
@@ -185,30 +219,36 @@
             const id = walkthrough.id;
             addWalkthroughListener('start', id + '_wts');
             addWalkthroughListener('edit', id + '_wte');
-            addWalkthroughListener('delete', id + '_wtd');
           });
         }
         break;
       case 'editing_update':
+        const newOrEditing = message.walkthrough.state;
         const name = message.walkthrough.name;
+        const walkthroughID = message.walkthrough.id;
         const nodes = message.walkthrough.nodes;
         document.getElementById('walkthrough_name').value = name;
         let nodeListContents = '<p class="placeholder">Select and add some elements to the walkthrough.</p>';
         if (nodes.length > 0) {
-          nodeListContents = '<ul>';
+          nodeListContents = '<table>';
             nodes.forEach(node => {
               const name = node.name;
               const id = node.id;
-              nodeListContents += '<li>' + name;
-              nodeListContents +=  ' ' + getButtonString(id, 'note');
-              nodeListContents +=  ' ' + getButtonString(id, 'up');
-              nodeListContents +=  ' ' + getButtonString(id, 'down');
-              nodeListContents +=  ' ' + getButtonString(id, 'remove');
-              nodeListContents += '</li>';
+              nodeListContents += '<tr><td>' + name + '</td>';
+              nodeListContents += '<td class="table-right">';
+              nodeListContents +=  getButton(id, 'note');
+              nodeListContents +=  getButton(id, 'up');
+              nodeListContents +=  getButton(id, 'down');
+              nodeListContents +=  getButton(id, 'remove');
+              nodeListContents += '</td></tr>';
           });
-          nodeListContents += '</ul>';
+          nodeListContents += '</table>';
+          if (newOrEditing == 'editing') {
+            nodeListContents += getButton(walkthroughID, 'delete')
+          }
         }
         document.getElementById("nodes_list").innerHTML = nodeListContents;
+        document.getElementById("nodes_list").scrollTop = 0;
         if (nodes.length > 0) {
           nodes.forEach(node => {
             const id = node.id;
@@ -217,6 +257,9 @@
             addWalkthroughListener('down', id + '_ndn');
             addWalkthroughListener('remove', id + '_nrm');
           });
+        }
+        if (newOrEditing == 'editing') {
+          addWalkthroughListener('delete', walkthroughID + '_wtd');
         }
         break;
       case 'editing_clear':
@@ -268,42 +311,50 @@
     parent.postMessage({ pluginMessage: { type: 'state_home'}}, '*');
   }
   // helper functions
-  function getButtonString(id, type) {
+  function getButton(id, type) {
     let label = null;
     let buttonId = null;
+    let styles = null;
     switch(type) {
       case 'start':
         label = 'Start';
         buttonId = id + '_wts';
+        styles = 'action';
         break;
       case 'edit':
         label = '✎';
         buttonId = id + '_wte';
+        styles = 'icon';
         break;
       case 'delete':
-        label = '⊗';
+        label = 'Delete Walkthrough';
         buttonId = id + '_wtd';
+        styles = 'red';
         break;
       case 'note':
         label = '✎';
         buttonId = id + '_nno';
+        styles = 'icon';
         break;
       case 'up':
         label = '↑';
         buttonId = id + '_nup';
+        styles = 'icon';
         break;
       case 'down':
         label = '↓';
         buttonId = id + '_ndn';
+        styles = 'icon';
         break;
       case 'remove':
-        label = '⊗';
+        label = '✕';
         buttonId = id + '_nrm';
+        styles = 'icon-delete';
         break;
       default:
         console.error('no button type');
     }
-    return '<button id="' + buttonId + '" class="outline">' + label + '</button>';
+    return '<button id="' + buttonId + '" class="' + styles + '">' + label + '</button>';
   }
   function addWalkthroughListener(type, id) {
     document.getElementById(id).onclick = () => {
