@@ -1,15 +1,27 @@
+/*
+    UI states
+*/
 const STATE_HOME = 'home';
 const STATE_EDITING = 'editing';
 const STATE_WALKING = 'walking';
 const STATE_NEW = 'new';
 const STATE_NOTE = 'note';
+/*
+    State variables
+*/
 let currentWalkthrough = null;
 let editingWalkthrough = null;
 let editingNode = null;
 let currentState = null;
+/*
+    Initialising UI
+*/
 figma.showUI(__html__);
 figma.ui.resize(400, 400);
 updateUIState(STATE_HOME);
+/*
+    UI message handler
+*/
 figma.ui.onmessage = msg => {
     switch (msg.type) {
         case 'state_home':
@@ -19,15 +31,18 @@ figma.ui.onmessage = msg => {
             const newState = msg.type.substring(6, msg.type.length);
             updateUIState(newState);
             break;
-        case 'next':
-            nextNode(null);
-            break;
-        case 'save_note':
-            saveNote(msg.value);
+        case 'add_nodes':
+            addNodesToWalkthrough(false);
             break;
         case 'save_walkthrough':
             const name = msg.value;
             saveWalkthrough(name);
+            break;
+        case 'save_note':
+            saveNote(msg.value);
+            break;
+        case 'next':
+            nextNode(null);
             break;
         case 'start':
         case 'edit':
@@ -64,11 +79,8 @@ figma.ui.onmessage = msg => {
                     break;
             }
             break;
-        case 'add_nodes':
-            addNodesToWalkthrough(false);
-            break;
         default:
-            console.error('no ts message handler');
+            console.error('No onmessage handler.');
             return;
     }
 };
@@ -124,21 +136,6 @@ function updateEditingNodes() {
         }),
     };
     const message = { type: 'editing_update', walkthrough: uiWalkthrough };
-    figma.ui.postMessage(message);
-}
-function editNodeNote(nodeID) {
-    editingNode = figma.getNodeById(nodeID);
-    const walkthroughID = (currentState == STATE_WALKING) ?
-        currentWalkthrough.id : editingWalkthrough.id;
-    const note = editingNode.getPluginData(walkthroughID);
-    const name = editingNode.name;
-    const message = {
-        type: 'noting',
-        id: nodeID,
-        name: name,
-        note: note
-    };
-    updateUIState(STATE_NOTE);
     figma.ui.postMessage(message);
 }
 function loadNode() {
@@ -207,6 +204,24 @@ function nextNode(walkthroughID) {
     figma.viewport.scrollAndZoomIntoView(newSelection);
     figma.notify((nextIndex + 1) + ' — ' + newSelectedNode.name, { timeout: 1000 });
     loadNode();
+}
+/*
+    Editing, saving notes
+*/
+function editNodeNote(nodeID) {
+    editingNode = figma.getNodeById(nodeID);
+    const walkthroughID = (currentState == STATE_WALKING) ?
+        currentWalkthrough.id : editingWalkthrough.id;
+    const note = editingNode.getPluginData(walkthroughID);
+    const name = editingNode.name;
+    const message = {
+        type: 'noting',
+        id: nodeID,
+        name: name,
+        note: note
+    };
+    updateUIState(STATE_NOTE);
+    figma.ui.postMessage(message);
 }
 function saveNote(note) {
     const walkthroughID = currentWalkthrough ? currentWalkthrough.id : editingWalkthrough.id;
