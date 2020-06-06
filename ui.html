@@ -1,52 +1,155 @@
 <style>
-    html {
+    html, body {
       font-family: Arial, Helvetica, sans-serif;
-      padding: .5rem;
+      padding: 0;
+      margin: 0;
+      background-color: #e5e5e5;
+    }
+    input {
+      outline: none;
+      padding: .3rem .5rem;
+      border-radius: .5rem;
+      background-color: lightgray;
+      border: none;
+      font-size: .8rem;
+      margin: 0;
+    }
+    button:hover {
+      background-color: darkblue;
     }
     button {
-      background-color: darkslateblue;
+      outline: none;
+      padding: .3rem .5rem;
+      border-radius: .5rem;
       color: white;
-      padding: .5rem;
-      border-radius: 5px;
-    }
-    .walkthrough-list {
-      margin: 1rem 0 0;
       font-size: .7rem;
-      color: grey;
       font-weight: bold;
+      background-color: darkslateblue;
+      border: none;
+      cursor: pointer;
+    }
+    button.text {
+      background: none;
+    }
+    button.text:hover {
+      color: darkblue;
+    }
+    button.grey {
+      background: grey;
+
+    }
+    button.grey:hover {
+      color: darkblue;
+    }
+    button.outline {
+      background: #f2f2f2;
+      color: #a9a9a9;
+      padding: .2rem .4rem;
+      margin-left: .2rem;
+      font-weight: normal;
+    }
+    button.outline:hover {
+      color: slategray;
+    }
+    table {
+      padding: 0;
+      margin: 0;
+      border: none;
+      width: 100%;
+    }
+    tr {
+    }
+    td {
+      padding: .4rem;
+      margin: 0;
+      border: none;
+    }
+    .placeholder {
+        font-size: .7rem;
+        color: #a9a9a9;
+        font-weight: bold;
+        text-align: center;
+        padding: 3rem 1rem;
+    }
+    .toolbar {
+      background-color: #a9a9a9;
+    }
+    .table-right {
+      text-align: right;
+      padding-left: 0;
+    }
+    .footer {
+      background-color: silver;
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+    }
+    .footer * {
+      width: 100%;
     }
 </style>
 <html>
   <!--State: home-->
   <div id="home_state" style="display:block">
-    <button id="new_walkthrough" class="text-button">Create walkthrough</button>
-    <div id="walkthrough_list" class="walkthrough-list">Loading walkthroughs...</div>
+    <table class="toolbar">
+      <tr>
+        <td>
+          <button id="new_walkthrough">Create</button>
+        </td>
+        <td class="table-right">
+          <button id="login" class="text">Login</button>
+        </td>
+      </tr>
+    </table>
+    <div id="walkthrough_list" class="list">
+      <p>Loading...</p>
+    </div>
   </div>
 
   <!--State: editing-->
   <div id="editing_state" style="display:none">
-    <button id="add_nodes">Add selected</button><button id="exit_new">Cancel</button>
-    <hr>
-    <div id="nodes_list">Select an element or two and click Add selected</div>
-    <input id="walkthrough_name"></input><button id="save_walkthrough">Save walkthrough</button>
+    <table class="toolbar">
+      <tr>
+        <td>
+          <button id="add_nodes" class="grey">Add selected</button>
+        </td>
+        <td class="table-right">
+          <button id="exit_new" class="text">Cancel</button>
+        </td>
+      </tr>
+    </table>
+    <div id="nodes_list" class="list">
+      <p class="placeholder">Add some elements</p>
+    </div>
+    <table class="footer">
+      <tr>
+        <td>
+          <input id="walkthrough_name"></input>
+        </td>
+        <td class="table-right">
+          <button id="save_walkthrough">Save</button>
+        </td>
+      </tr>
+    </table>
   </div>
 
   <!--State: walking-->
   <div id="walking_state" style="display:none">
-    <p id="selected_node">Click next to start</p>
-    <button id="next">➜</button>
-    <button id="edit_note">✎</button>
-    <button id="exit_walking">✕</button>
-    <hr>
-    <p id="note"></p>
+    <div class="toolbar">
+      <button id="next">➜</button>
+      <button id="edit_note">✎</button>
+      <button id="exit_walking">✕</button>
+    </div>
+    <p id="selected_node" class="layer-title"></p>
+    <p id="note" class="note"></p>
   </div>
 
   <!--State: noting-->
   <div id="noting_state">
-    <p id="editing_node">Click next to start</p>
+    <p id="editing_node"></p>
+    <button id="save_note">Save</button>
     <textarea id="noting" rows="3" cols="30" maxlength="50" wrap="soft"></textarea>
-    <br />
-    <button id="save_note">Save note</button>
   </div>
 
   <script>
@@ -62,7 +165,7 @@
         break;
       case 'walkthrough_list':
         const walkthroughs = message.walkthroughs;
-        let walkthroughListContents = 'Create a walkthrough to get started.';
+        let walkthroughListContents = '<p class="placeholder">Create a walkthrough to get started</p>';
         if (walkthroughs.length > 0) {
           walkthroughListContents = '<ul>';
           walkthroughs.forEach(walkthrough => {
@@ -90,7 +193,7 @@
         const name = message.walkthrough.name;
         const nodes = message.walkthrough.nodes;
         document.getElementById('walkthrough_name').value = name;
-        let nodeListContents = 'Select and add some elements to the walkthrough.';
+        let nodeListContents = '<p class="placeholder">Select and add some elements to the walkthrough.</p>';
         if (nodes.length > 0) {
           nodeListContents = '<ul>';
             nodes.forEach(node => {
@@ -174,7 +277,7 @@
         buttonId = id + '_wts';
         break;
       case 'edit':
-        label = 'Edit';
+        label = '✎';
         buttonId = id + '_wte';
         break;
       case 'delete':
@@ -200,7 +303,7 @@
       default:
         console.error('no button type');
     }
-    return '<button id="' + buttonId + '">' + label + '</button>';
+    return '<button id="' + buttonId + '" class="outline">' + label + '</button>';
   }
   function addWalkthroughListener(type, id) {
     document.getElementById(id).onclick = () => {

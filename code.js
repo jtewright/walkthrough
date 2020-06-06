@@ -17,6 +17,7 @@ let currentState = null;
     Initialising UI
 */
 figma.showUI(__html__);
+figma.ui.resize(300, 400);
 updateUIState(STATE_HOME);
 /*
     UI message handler
