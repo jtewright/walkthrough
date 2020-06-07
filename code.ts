@@ -23,6 +23,11 @@ figma.showUI(__html__);
 figma.ui.resize(400,400);
 updateUIState(STATE_HOME);
 figma.ui.postMessage({type: 'settings'});
+const relaunchData = getRelaunchData();
+setRelaunchData();
+if (figma.command == 'create') {
+    updateUIState(STATE_NEW);
+}
 
 /*
     UI message handler
@@ -108,6 +113,9 @@ function updateUIState(newState) {
         figma.ui.postMessage({type: 'editing_clear'});
         editingWalkthrough = null;
     }
+    if (currentState == STATE_HOME && newState == STATE_NEW) {
+        createWalkthrough();
+    }
     if (currentState == STATE_WALKING && newState == STATE_HOME) {
         currentWalkthrough = null;
     }
@@ -128,9 +136,6 @@ function updateUIState(newState) {
         editingWalkthrough = null;
         currentWalkthrough = null;
         currentWalkthroughIndex = null;
-    }
-    if (newState == STATE_NEW) {
-        addNodesToWalkthrough(true);
     }
     if (oldState == STATE_NOTE && newState == STATE_EDITING) {
         editingNode = null;
@@ -231,7 +236,7 @@ function nextNode(direction, walkthroughID) {
             nextIndex = selectedNodeIndex + direction;
         }
         else {
-            console.error('not getting right index');
+            console.error('Lost in the index.');
         }
         // looping
         if (direction == 1 && nextIndex >= nodes.length) {
@@ -308,10 +313,19 @@ function saveNote(note) {
 /*
     Creating, editing, deleting walkthroughs
 */
+function createWalkthrough() {
+    editingWalkthrough = {
+        id: uuidv4(),
+        name: null,
+        nodes: [],
+    };
+    addNodesToWalkthrough(true);
+    updateEditingNodes(false);
+}
+
 function addNodesToWalkthrough(suppressNotify) {
     let page =figma.currentPage;
     const selected = page.selection;
-
     // no objects selected
     if (selected.length == 0) {
         if (!suppressNotify) {
@@ -319,29 +333,17 @@ function addNodesToWalkthrough(suppressNotify) {
         }
         return;
     }
-
-    let walkthrough = null;
-    if (editingWalkthrough != null) {
-        walkthrough = editingWalkthrough;
-        const currentNodes = walkthrough.nodes;
-        const newNodes = selected.filter(node => currentNodes.indexOf(node) == -1);
-        const dupeNodes = selected.filter(node => currentNodes.indexOf(node) !== -1);
-        const dupLen = dupeNodes.length;
-        if (dupLen > 0) {
-            const message = (dupLen > 1) ? 
-                dupLen + ' elements already in walkthrough' : dupeNodes[0].name + ' already in walkthrough';
-            figma.notify(message, {timeout: 1000});
-        }
-        walkthrough.nodes = [...currentNodes, ...newNodes];
+    let walkthrough = editingWalkthrough;
+    const currentNodes = walkthrough.nodes;
+    const newNodes = selected.filter(node => currentNodes.indexOf(node) == -1);
+    const dupeNodes = selected.filter(node => currentNodes.indexOf(node) !== -1);
+    const dupLen = dupeNodes.length;
+    if (dupLen > 0) {
+        const message = (dupLen > 1) ? 
+            dupLen + ' elements already in walkthrough' : dupeNodes[0].name + ' already in walkthrough';
+        figma.notify(message, {timeout: 1000});
     }
-    // creating a new one
-    else {
-        walkthrough = {
-            id: uuidv4(),
-            name: null,
-            nodes: selected,
-        }
-    }
+    walkthrough.nodes = [...currentNodes, ...newNodes];
     editingWalkthrough = walkthrough;
     updateEditingNodes(true);
 }
@@ -421,6 +423,7 @@ function saveWalkthrough(name) {
     walkthroughsObject = {array: walkthroughs};
     const walkthroughsObjectJSON = JSON.stringify(walkthroughsObject);
     page.setPluginData('walkthroughs', walkthroughsObjectJSON);
+    setRelaunchData();
     if (currentState == STATE_EDITING || currentState == STATE_NEW) {
         updateUIState(STATE_HOME);
     }
@@ -431,7 +434,7 @@ function saveWalkthrough(name) {
 
 function editWalkthrough(walkthroughID) {
     editingWalkthrough = getWalkthrough(walkthroughID);
-    updateEditingNodes(false);
+    updateEditingNodes(true);
 }
 
 function deleteWalkthrough(walkthroughID) {
@@ -443,6 +446,7 @@ function deleteWalkthrough(walkthroughID) {
     const walkthroughsObjectJSON = JSON.stringify(walkthroughsObject);
     let page = figma.currentPage
     page.setPluginData('walkthroughs', walkthroughsObjectJSON);
+    setRelaunchData();
     updateUIState(STATE_HOME);
 }
 
@@ -476,4 +480,20 @@ function getWalkthroughsObject() {
         walkthroughsObject = JSON.parse(existingWalkthroughs);
     }
     return walkthroughsObject;
+}
+
+function setRelaunchData() {
+    const page = figma.currentPage;
+    const relaunchData = getRelaunchData();
+    page.setRelaunchData(relaunchData);
+}
+
+function getRelaunchData() {
+    const numberOfWalkthroughs = getWalkthroughsArray().length;
+    if (numberOfWalkthroughs > 0) {
+        return { create: '', relaunch: 'This document contains Walkthroughs. Open the Walkthroughs plugin to take a look.'}
+    }
+    else {
+        return { create: '' }
+    }
 }
