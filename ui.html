@@ -3,7 +3,7 @@
       font-family: "Lucida Console", Monaco, monospace;
       padding: 0;
       margin: 0;
-      background-color: red;
+      background-color: lightgreen;
       font-size: 11pt;
       overflow: hidden;
       height: 100%;
@@ -90,12 +90,12 @@
     }
     td {
       font-size: 1rem;
-      vertical-align: middle;
     }
     .list {
-      padding: .5rem 1rem;
-      height: calc(100% - 105px);
+      padding: .5rem 1rem 0;
+      height: calc(100% - 100px);
       overflow: auto;
+      display: block;
     }
     .list::-webkit-scrollbar {
       display: none;
@@ -136,14 +136,50 @@
       right: 0;
       padding: .2rem .5rem;
     }
-    .layer-title {
-      margin: 1rem .5rem;
-    }
     .note {
       background-color: white;
       padding: 1rem;
-      margin: 0 .5rem 0 0;
+      margin: 0;
       border-radius: .3rem;
+      border: none;
+    }
+    textarea {
+      font-family: inherit;
+      outline: none;
+      border: none;
+      font-size: 1rem;
+    }
+    .editing-note {
+      border: none;
+      background-color: white;
+      padding: 1rem;
+      margin: 1rem;
+      border-radius: .3rem;
+    }
+    .layer-title {
+      margin: 1rem 0;
+      display: inline-block;
+    }
+    .pos {
+      color: rgba(0, 0, 0, .5);
+      background: none;
+      border: 1px solid rgba(0, 0, 0, .5);
+      width: 20px;
+      height: 20px;
+      border-radius: 20px;
+      margin: 0 0 .05rem -.2rem;
+      padding: 0 0 0 0;
+      display: inline-block;
+      vertical-align: middle;
+    }
+    .pos-inner {
+      position: relative;
+      top: 2px;
+      font-size: .8rem;
+      width: 100%;
+      height: 100%;
+      vertical-align: middle;
+      text-align: center;
     }
 </style>
 <html>
@@ -152,10 +188,10 @@
     <table class="toolbar">
       <tr>
         <td>
-          <button id="new_walkthrough">Create</button>
+          <button id="login" class="text">Login</button>
         </td>
         <td class="table-right">
-          <button id="login" class="text">Login</button>
+          <button id="new_walkthrough">Create</button>
         </td>
       </tr>
     </table>
@@ -169,10 +205,10 @@
     <table class="toolbar">
       <tr>
         <td>
-          <button id="add_nodes">Add selected</button>
+          <button id="exit_new" class="text">Cancel</button>
         </td>
         <td class="table-right">
-          <button id="exit_new" class="text">Cancel</button>
+          <button id="add_nodes">Add selected</button>
         </td>
       </tr>
     </table>
@@ -196,21 +232,24 @@
     <table class="toolbar">
       <tr>
         <td>
-          <button id="edit_note">Edit note</button>
+          <button id="exit_walking" class="text">Exit</button>
         </td>
         <td class="table-right">
-          <button id="exit_walking" class="text">Exit</button>
+          <button id="edit_note">Edit note</button>
         </td>
       </tr>
     </table>
     <div class="list">
-      <p id="selected_node" class="layer-title"></p>
+      <div>
+        <div class="pos"><div id="selected_node_position" class="pos-inner"></div></div>
+        <div id="selected_node" class="layer-title"></div>
+      </div>
       <p id="note"></p>
     </div>
     <table class="footer">
       <tr>
         <td>
-          <button id="back">Back</button>
+          <button id="previous">Previous</button>
         </td>
         <td class="table-right">
           <button id="next" class="action">Next</button>
@@ -221,9 +260,27 @@
 
   <!--State: noting-->
   <div id="noting_state">
-    <p id="editing_node"></p>
-    <button id="save_note">Save</button>
-    <textarea id="noting" rows="3" cols="30" maxlength="50" wrap="soft"></textarea>
+    <table class="toolbar">
+      <tr>
+        <td class="table-right">
+          <button id="exit_noting" class="text">Cancel</button>
+        </td>
+      </tr>
+    </table>
+    <div class="list">
+      <div>
+        <div class="pos"><div id="editing_node_position" class="pos-inner"></div></div>
+        <div id="editing_node" class="layer-title"></div>
+      </div>
+      <textarea id="noting" rows="10" cols="36.5" class="note" wrap="soft"></textarea>
+    </div>
+    <table class="footer">
+      <tr>
+        <td class="table-right">
+          <button id="save_note" class="action">Save</button>
+        </td>
+      </tr>
+    </table>
   </div>
 
   <script>
@@ -271,10 +328,12 @@
         let nodeListContents = '<p class="placeholder">Select and add some elements to the walkthrough.</p>';
         if (nodes.length > 0) {
           nodeListContents = '<table>';
-            nodes.forEach(node => {
+            nodes.forEach((node, index) => {
               const name = node.name;
               const id = node.id;
-              nodeListContents += '<tr><td>' + name + '</td>';
+              const pos = index + 1;
+              const posElm = '<div class="pos"><div class="pos-inner">' + pos + '</div></div>';
+              nodeListContents += '<tr><td>' + posElm + ' ' + name + '</td>';
               nodeListContents += '<td class="table-right">';
               nodeListContents +=  getButton(id, 'note');
               nodeListContents +=  getButton(id, 'up');
@@ -307,6 +366,7 @@
         break;
       case 'note':
         document.getElementById('selected_node').innerHTML = message.name;
+        document.getElementById('selected_node_position').innerHTML = message.position;
         document.getElementById('note').innerHTML = message.note;
         document.getElementById('note').className = (message.note.length > 0) ? 'note' : null;
         document.getElementById('edit_note').innerHTML = (message.note.length > 0) ? 'Edit note' : 'Add note';
@@ -318,6 +378,7 @@
         }
         break;
       case 'noting':
+        document.getElementById('editing_node_position').innerHTML = message.position;
         document.getElementById('editing_node').innerHTML = message.name;
         document.getElementById('noting').value = message.note;
         break;
@@ -344,8 +405,8 @@
   document.getElementById('next').onclick = () => {
     parent.postMessage({ pluginMessage: { type: 'next' } }, '*');
   }
-  document.getElementById('back').onclick = () => {
-    parent.postMessage({ pluginMessage: { type: 'back' } }, '*');
+  document.getElementById('previous').onclick = () => {
+    parent.postMessage({ pluginMessage: { type: 'previous' } }, '*');
   }
   document.getElementById('save_note').onclick = () => {
     let note = document.getElementById('noting').value;
@@ -353,6 +414,9 @@
   }
   document.getElementById('exit_walking').onclick = () => {
     parent.postMessage({ pluginMessage: { type: 'state_home'}}, '*');
+  }
+  document.getElementById('exit_noting').onclick = () => {
+    parent.postMessage({ pluginMessage: { type: 'state_walking'}}, '*');
   }
   // helper functions
   function getButton(id, type) {

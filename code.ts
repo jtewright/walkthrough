@@ -49,7 +49,7 @@ figma.ui.onmessage = msg => {
         case 'next': 
             nextNode(null);
             break;
-        case 'back':
+        case 'previous':
             console.log('todo, implement back');
             //nextNode(null);
             break;
@@ -157,16 +157,20 @@ function updateEditingNodes() {
 function loadNode() {
     let page = figma.currentPage;
     const selection = page.selection;
-    const walkthroughID = currentWalkthrough ?
-        currentWalkthrough.id : editingWalkthrough.id;
+    const walkthrough = currentWalkthrough ?
+        currentWalkthrough : editingWalkthrough;
     if (selection.length > 0) {
         const selectedNode = selection[0];
-        const note = selectedNode.getPluginData(walkthroughID);
+        const note = selectedNode.getPluginData(walkthrough.id);
         const name = selectedNode.name;
+        const selectedRecord = walkthrough.nodes.find(node => 
+            node.id == selectedNode.id);
+        const position = walkthrough.nodes.indexOf(selectedRecord) + 1;
         const message = {
             type: 'note',
             id: selectedNode.id,
             name: name,
+            position: position,
             note: note
         };
         figma.ui.postMessage(message);
@@ -229,14 +233,18 @@ function nextNode(walkthroughID) {
 */
 function editNodeNote(nodeID) {
     editingNode = figma.getNodeById(nodeID);
-    const walkthroughID = (currentState == STATE_WALKING) ? 
-        currentWalkthrough.id : editingWalkthrough.id;
-    const note = editingNode.getPluginData(walkthroughID);
+    const walkthrough = (currentState == STATE_WALKING) ? 
+        currentWalkthrough : editingWalkthrough;
+    const note = editingNode.getPluginData(walkthrough.id);
     const name = editingNode.name;
+    const selectedRecord = walkthrough.nodes.find(node => 
+        node.id == editingNode.id);
+    const position = walkthrough.nodes.indexOf(selectedRecord) + 1;
     const message = {
         type: 'noting',
         id: nodeID,
         name: name,
+        position: position,
         note: note
     };
     updateUIState(STATE_NOTE);
