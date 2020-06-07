@@ -19,6 +19,7 @@ let currentState = null;
 figma.showUI(__html__);
 figma.ui.resize(400, 400);
 updateUIState(STATE_HOME);
+figma.ui.postMessage({ type: 'settings' });
 /*
     UI message handler
 */

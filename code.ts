@@ -1,7 +1,6 @@
 /*
     UI states
 */
-
 const STATE_HOME = 'home';
 const STATE_EDITING = 'editing';
 const STATE_WALKING = 'walking';
@@ -11,7 +10,6 @@ const STATE_NOTE = 'note';
 /*
     State variables
 */
-
 let currentWalkthrough = null;
 let editingWalkthrough = null;
 let editingNode = null;
@@ -23,6 +21,7 @@ let currentState = null;
 figma.showUI(__html__);
 figma.ui.resize(400,400);
 updateUIState(STATE_HOME);
+figma.ui.postMessage({type: 'settings'});
 
 /*
     UI message handler
