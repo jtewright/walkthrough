@@ -1,3 +1,6 @@
+<!--
+  styles
+-->
 <style>
     html, body {
       font-family: "Lucida Console", Monaco, monospace;
@@ -204,12 +207,16 @@
       text-align: center;
     }
 </style>
+<!--
+  interface
+-->
 <html>
   <!--State: home-->
   <div id="home_state" style="display:block">
     <table class="toolbar">
       <tr>
         <td>
+          <button id="settings" class="text">🌈Colour</button>
         </td>
         <td class="table-right">
           <button id="new_walkthrough">+ Create</button>
@@ -409,12 +416,19 @@
         document.getElementById('editing_node').innerHTML = message.name;
         document.getElementById('noting').value = message.note;
         break;
+      case 'settings':
+        let bgcolor = getRandomLightColour();
+        document.body.style.backgroundColor = bgcolor;
+        break;
       default:
         console.error('no ui message handler');
         return;
     }
   }
   // creating walkthrough
+  document.getElementById('settings').onclick = () => {
+    parent.postMessage({ pluginMessage: { type: 'settings'} }, '*');
+  }
   document.getElementById('new_walkthrough').onclick = () => {
     parent.postMessage({ pluginMessage: { type: 'state_new'} }, '*');
   }
@@ -495,6 +509,39 @@
     document.getElementById(id).onclick = () => {
       parent.postMessage({ pluginMessage: { type: type, value: id } }, '*');
     }
+  }
+  function isTooDark(colou) {
+    const c = colou.substring(1);      // strip #
+    const rgb = parseInt(c, 16);   // convert rrggbb to decimal
+    const r = (rgb >> 16) & 0xff;  // extract red
+    const g = (rgb >>  8) & 0xff;  // extract green
+    const b = (rgb >>  0) & 0xff;  // extract blue
+    const luma = 0.2126 * r + 0.7152 * g + 0.0722 * b; // per ITU-R BT.709
+    console.log(luma);
+    if (luma < 150) {
+      return true;
+    }
+    else {
+      return false;
+    }
+    console.log('yoii');
+  }
+  function getRandomLightColour() {
+    let bgcolor = getRandomColour();
+    while (isTooDark(bgcolor)) {
+      console.log('too dark');
+      bgcolor = getRandomColour();
+    }
+    console.log('found light color')
+    return bgcolor;
+  }
+  function getRandomColour() {
+    const letters = '0123456789ABCDEF';
+    let bgcolor = '#';
+    for (var i = 0; i < 6; i++) {
+      bgcolor += letters[Math.floor(Math.random() * 16)];
+    }
+    return bgcolor;
   }
   </script>
 </html>

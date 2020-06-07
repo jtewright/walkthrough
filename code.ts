@@ -56,6 +56,9 @@ figma.ui.onmessage = msg => {
         case 'exit_noting':
             updateUIState(currentWalkthrough ? STATE_WALKING : STATE_EDITING);
             break;
+        case 'settings':
+            figma.ui.postMessage({type: 'settings'});
+            break;
         case 'start':
         case 'edit':
         case 'delete':
