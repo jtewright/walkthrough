@@ -38,7 +38,7 @@
     }
     button.red {
       width: 100%;
-      margin-bottom: .5rem;
+      margin: 1rem 0 1rem;
       background-color: rgba(0, 0, 0, .1);
       color: rgba(0, 0, 0, .5);
     }
@@ -91,6 +91,21 @@
     td {
       font-size: 1rem;
     }
+    .node-title {
+      display: inline;
+      vertical-align: middle;
+      line-height: 1.1rem;
+      margin: 0 0 0 .5rem;
+    }
+    .node-title-container {
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      margin: .5rem 0 0;
+      height: 30px;
+      padding: .2rem 0 0 .2rem;
+      max-width: 255px;
+    }
     .list {
       padding: .5rem 1rem 0;
       height: calc(100% - 91px);
@@ -116,6 +131,7 @@
     }
     .table-right {
       text-align: right;
+      width: 150px;
     }
     input {
       font-family: inherit;
@@ -139,7 +155,7 @@
     .note {
       background-color: rgba(255, 255, 255, .8);
       padding: 1rem;
-      margin: 0 0 1rem;
+      margin: 1rem 0 1rem;
       border-radius: .3rem;
       border: none;
       display: block;
@@ -160,7 +176,10 @@
     }
     .layer-title {
       margin: 1rem 0;
-      display: inline-block;
+      display: inline;
+    }
+    .layer-title-container {
+      margin: .5rem 0 0;
     }
     .pos {
       color: rgba(0, 0, 0, .8);
@@ -191,7 +210,6 @@
     <table class="toolbar">
       <tr>
         <td>
-          <button id="login" class="text">Login</button>
         </td>
         <td class="table-right">
           <button id="new_walkthrough">+ Create</button>
@@ -243,7 +261,7 @@
       </tr>
     </table>
     <div class="list">
-      <div>
+      <div class="layer-title-container">
         <div class="pos"><div id="selected_node_position" class="pos-inner"></div></div>
         <div id="selected_node" class="layer-title"></div>
       </div>
@@ -271,7 +289,7 @@
       </tr>
     </table>
     <div class="list">
-      <div>
+      <div class="layer-title-container">
         <div class="pos"><div id="editing_node_position" class="pos-inner"></div></div>
         <div id="editing_node" class="layer-title"></div>
       </div>
@@ -336,7 +354,9 @@
               const id = node.id;
               const pos = index + 1;
               const posElm = '<div class="pos"><div class="pos-inner">' + pos + '</div></div>';
-              nodeListContents += '<tr><td>' + posElm + ' ' + name + '</td>';
+              nodeListContents += '<tr><td><div class="node-title-container">' + posElm;
+              nodeListContents += '<div class="node-title">' + name + '</div>';
+              nodeListContents += '</div></td>';
               nodeListContents += '<td class="table-right">';
               nodeListContents +=  getButton(id, 'note');
               nodeListContents +=  getButton(id, 'up');
@@ -362,8 +382,10 @@
         if (newOrEditing == 'editing') {
           addWalkthroughListener('delete', walkthroughID + '_wtd');
         }
-        const y = nodes.length * 25;
-        document.getElementById('nodes_list').scrollTo(0, y);
+        if (message.scroll) {
+          const y = nodes.length * 32;
+          document.getElementById('nodes_list').scrollTo(0, y);
+        }
         break;
       case 'editing_clear':
         document.getElementById('walkthrough_name').value = null;
@@ -421,7 +443,7 @@
     parent.postMessage({ pluginMessage: { type: 'state_home'}}, '*');
   }
   document.getElementById('exit_noting').onclick = () => {
-    parent.postMessage({ pluginMessage: { type: 'state_walking'}}, '*');
+    parent.postMessage({ pluginMessage: { type: 'exit_noting'}}, '*');
   }
   // helper functions
   function getButton(id, type) {

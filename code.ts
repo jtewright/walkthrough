@@ -53,6 +53,9 @@ figma.ui.onmessage = msg => {
             console.log('todo, implement back');
             //nextNode(null);
             break;
+        case 'exit_noting':
+            updateUIState(currentWalkthrough ? STATE_WALKING : STATE_EDITING);
+            break;
         case 'start':
         case 'edit':
         case 'delete':
@@ -110,6 +113,10 @@ function updateUIState(newState) {
         editingNode = null;
         loadNode();
     }
+    if (currentState == STATE_NOTE && newState == STATE_EDITING) {
+        editingNode = null;
+        updateEditingNodes(false);
+    }
 
     // changing state
     currentState = newState;
@@ -144,7 +151,7 @@ function loadWalkthroughs() {
     figma.ui.postMessage(message);
 }
 
-function updateEditingNodes() {
+function updateEditingNodes(scroll) {
     let uiWalkthrough = {
         state: currentState,
         id: editingWalkthrough.id,
@@ -154,7 +161,10 @@ function updateEditingNodes() {
             return {id: node.id, name: node.name};
         }),
     };
-    const message = {type: 'editing_update', walkthrough: uiWalkthrough};
+    const message = {
+        type: 'editing_update', 
+        scroll: scroll,
+        walkthrough: uiWalkthrough};
     figma.ui.postMessage(message);
 }
 
@@ -301,7 +311,7 @@ function addNodesToWalkthrough(suppressNotify) {
         }
     }
     editingWalkthrough = walkthrough;
-    updateEditingNodes();
+    updateEditingNodes(true);
 }
 
 function upNode(nodeID) {
@@ -317,7 +327,7 @@ function upNode(nodeID) {
     const after = nodes.filter((n, i) => (n.id !== nodeID && i >= newIndex));
     walkthrough.nodes = [...before, node, ...after];
     editingWalkthrough = walkthrough;
-    updateEditingNodes();
+    updateEditingNodes(false);
 }
 
 function downNode(nodeID) {
@@ -333,7 +343,7 @@ function downNode(nodeID) {
     const after = nodes.filter((n, i) => (n.id !== nodeID && i > newIndex));
     walkthrough.nodes = [...before, node, ...after];
     editingWalkthrough = walkthrough;
-    updateEditingNodes();
+    updateEditingNodes(false);
 }
 
 function removeNode(nodeID) {
@@ -346,7 +356,7 @@ function removeNode(nodeID) {
     }
     else {
          editingWalkthrough = walkthrough;
-         updateEditingNodes();
+         updateEditingNodes(false);
     }
 }
 
@@ -387,7 +397,7 @@ function saveWalkthrough(name) {
 
 function editWalkthrough(walkthroughID) {
     editingWalkthrough = getWalkthrough(walkthroughID);
-    updateEditingNodes();
+    updateEditingNodes(false);
 }
 
 function deleteWalkthrough(walkthroughID) {
