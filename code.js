@@ -10,6 +10,7 @@ const STATE_NOTE = 'note';
     State variables
 */
 let currentWalkthrough = null;
+let currentWalkthroughIndex = null;
 let editingWalkthrough = null;
 let editingNode = null;
 let currentState = null;
@@ -43,11 +44,10 @@ figma.ui.onmessage = msg => {
             saveNote(msg.value);
             break;
         case 'next':
-            nextNode(null);
+            nextNode(1, null);
             break;
         case 'previous':
-            console.log('todo, implement back');
-            //nextNode(null);
+            nextNode(-1, null);
             break;
         case 'exit_noting':
             updateUIState(currentWalkthrough ? STATE_WALKING : STATE_EDITING);
@@ -67,7 +67,7 @@ figma.ui.onmessage = msg => {
             switch (msg.type) {
                 case 'start':
                     updateUIState(STATE_WALKING);
-                    nextNode(id);
+                    nextNode(1, id);
                     break;
                 case 'edit':
                     updateUIState(STATE_EDITING);
@@ -124,6 +124,7 @@ function updateUIState(newState) {
         loadWalkthroughs();
         editingWalkthrough = null;
         currentWalkthrough = null;
+        currentWalkthroughIndex = null;
     }
     if (newState == STATE_NEW) {
         addNodesToWalkthrough(true);
@@ -132,6 +133,7 @@ function updateUIState(newState) {
 figma.on("close", function () {
     currentWalkthrough = null;
     editingWalkthrough = null;
+    currentWalkthroughIndex = null;
 });
 /*
     Loaders
@@ -185,7 +187,7 @@ function loadNode() {
 /*
     Walking through, saving notes
 */
-function nextNode(walkthroughID) {
+function nextNode(direction, walkthroughID) {
     let page = figma.currentPage;
     const selected = page.selection;
     // if not walking through and started walkthrough first thingy has been deleted
@@ -196,15 +198,29 @@ function nextNode(walkthroughID) {
     let nodes = currentWalkthrough.nodes;
     let nextIndex = 0;
     let newSelectionID = currentWalkthrough.nodes[nextIndex].id;
+    let looping = null;
     // one selected, goes to next node
-    if (walkthroughID == null && selected.length == 1) {
-        const selectedNodeID = selected[0].id;
-        const selectedNode = nodes.find(node => node.id == selectedNodeID);
-        const selectedNodeIndex = nodes.indexOf(selectedNode);
-        nextIndex = selectedNodeIndex + 1;
-        // loop
-        if (nextIndex >= nodes.length) {
+    if (walkthroughID == null) {
+        if (currentWalkthroughIndex !== null) {
+            nextIndex = currentWalkthroughIndex + direction;
+        }
+        else if (selected.length == 1) {
+            const selectedNodeID = selected[0].id;
+            const selectedNode = nodes.find(node => node.id == selectedNodeID);
+            const selectedNodeIndex = nodes.indexOf(selectedNode);
+            nextIndex = selectedNodeIndex + direction;
+        }
+        else {
+            console.error('not getting right index');
+        }
+        // looping
+        if (direction == 1 && nextIndex >= nodes.length) {
             nextIndex = 0;
+            looping = ' (looping)';
+        }
+        if (direction == -1 && nextIndex < 0) {
+            nextIndex = nodes.length - 1;
+            looping = ' (looping)';
         }
         newSelectionID = nodes[nextIndex].id;
     }
@@ -228,7 +244,10 @@ function nextNode(walkthroughID) {
     const newSelection = [newSelectedNode];
     figma.currentPage.selection = newSelection;
     figma.viewport.scrollAndZoomIntoView(newSelection);
-    figma.notify((nextIndex + 1) + ' — ' + newSelectedNode.name, { timeout: 1000 });
+    const name = newSelectedNode.name;
+    const notification = (nextIndex + 1) + ' — ' + name + (looping ? looping : '');
+    figma.notify(notification, { timeout: 1000 });
+    currentWalkthroughIndex = nextIndex;
     loadNode();
 }
 /*

@@ -16,7 +16,7 @@
       margin: 0;
     }
     button {
-      background: none;
+      background-color: rgba(255, 255, 255, .5);
       border: none;
       outline: none;
       margin: 0;
@@ -30,13 +30,14 @@
       vertical-align: middle;
     }
     button:hover {
-      background-color: rgba(0, 0, 0, .1);
+      background-color: rgba(255, 255, 255, .9);
     }
     button.text {
-      color: rgba(0, 0, 0, .5);
+      color: rgba(0, 0, 0, .7);
       background: none;
     }
     button.text:hover {
+      color: black;
       background-color: rgba(0, 0, 0, .1);
     }
     button.red {
@@ -219,7 +220,7 @@
           <button id="settings" class="text">🌈Colour</button>
         </td>
         <td class="table-right">
-          <button id="new_walkthrough">+ Create</button>
+          <button id="new_walkthrough" class="action">+ Create</button>
         </td>
       </tr>
     </table>
@@ -468,7 +469,7 @@
       case 'start':
         label = 'Start →';
         buttonId = id + '_wts';
-        styles = 'action';
+        styles = null;
         break;
       case 'edit':
         label = '⋯';
