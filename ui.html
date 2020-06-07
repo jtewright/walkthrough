@@ -123,10 +123,11 @@
       -ms-overflow-style: none;
     }
     .placeholder {
-        color: #a9a9a9;
+        color: rgba(0, 0, 0, .5);
         font-weight: bold;
         text-align: center;
-        padding: 2rem 1rem;
+        width: 50%;
+        margin: 25%;
     }
     .toolbar {
       background-color: rgba(0, 0, 0, .2);
@@ -242,7 +243,7 @@
       </tr>
     </table>
     <div id="nodes_list" class="list">
-      <p class="placeholder">Add some elements</p>
+      <p class="placeholder">Select some elements and click + Add selected</p>
     </div>
     <table class="footer">
       <tr>
@@ -325,7 +326,7 @@
         break;
       case 'walkthrough_list':
         const walkthroughs = message.walkthroughs;
-        let walkthroughListContents = '<p class="placeholder">Create a walkthrough to get started</p>';
+        let walkthroughListContents = '<p class="placeholder">Create a Walkthrough to get started</p>';
         if (walkthroughs.length > 0) {
           walkthroughListContents = '<table>';
           walkthroughs.forEach(walkthrough => {
@@ -354,7 +355,7 @@
         const walkthroughID = message.walkthrough.id;
         const nodes = message.walkthrough.nodes;
         document.getElementById('walkthrough_name').value = name;
-        let nodeListContents = '<p class="placeholder">Select and add some elements to the walkthrough.</p>';
+        let nodeListContents = '<p class="placeholder">Select some elements and click + Add selected</p>';
         if (nodes.length > 0) {
           nodeListContents = '<table>';
             nodes.forEach((node, index) => {

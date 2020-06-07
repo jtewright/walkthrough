@@ -86,7 +86,7 @@ figma.ui.onmessage = msg => {
                     downNode(id);
                     break;
                 case 'remove':
-                    removeNode(id);
+                    removeNode(id, true);
                     break;
             }
             break;
@@ -147,11 +147,19 @@ function loadWalkthroughs() {
     figma.ui.postMessage(message);
 }
 function updateEditingNodes(scroll) {
+    let nodes = editingWalkthrough.nodes;
+    let filteredNodes = nodes.filter((n) => {
+        if (figma.getNodeById(n.id) == null) {
+            removeNode(n.id, false);
+            return false;
+        }
+        return true;
+    });
     let uiWalkthrough = {
         state: currentState,
         id: editingWalkthrough.id,
         name: editingWalkthrough.name,
-        nodes: editingWalkthrough.nodes.map(n => {
+        nodes: filteredNodes.map(n => {
             let node = figma.getNodeById(n.id);
             return { id: node.id, name: node.name };
         }),
@@ -227,11 +235,14 @@ function nextNode(direction, walkthroughID) {
     let newSelectedNode = figma.getNodeById(newSelectionID);
     if (newSelectedNode == null) {
         // node has been deleted
-        removeNode(newSelectionID);
+        removeNode(newSelectionID, false);
         saveWalkthrough(currentWalkthrough.name);
         nextIndex = nextIndex + 1;
-        if (nextIndex >= nodes.length) {
+        if (direction == 1 && nextIndex >= nodes.length) {
             nextIndex = 0;
+        }
+        if (direction == -1 && nextIndex < 0) {
+            nextIndex = nodes.length - 1;
         }
         newSelectionID = nodes[nextIndex].id;
         newSelectedNode = figma.getNodeById(newSelectionID);
@@ -346,7 +357,7 @@ function downNode(nodeID) {
     editingWalkthrough = walkthrough;
     updateEditingNodes(false);
 }
-function removeNode(nodeID) {
+function removeNode(nodeID, updateNodes) {
     let walkthrough = (currentState == STATE_WALKING) ? currentWalkthrough : editingWalkthrough;
     let nodes = walkthrough.nodes;
     nodes = nodes.filter(node => node.id !== nodeID);
@@ -356,7 +367,9 @@ function removeNode(nodeID) {
     }
     else {
         editingWalkthrough = walkthrough;
-        updateEditingNodes(false);
+        if (updateNodes == true) {
+            updateEditingNodes(false);
+        }
     }
 }
 function saveWalkthrough(name) {
