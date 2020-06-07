@@ -100,6 +100,10 @@ function updateUIState(newState) {
     if (currentState == STATE_WALKING && newState == STATE_HOME) {
         currentWalkthrough = null;
     }
+    if (currentState == STATE_NOTE && newState == STATE_WALKING) {
+        editingNode = null;
+        loadNode();
+    }
     // changing state
     currentState = newState;
     const message = { type: 'state', state: currentState };

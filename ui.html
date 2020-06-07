@@ -93,7 +93,7 @@
     }
     .list {
       padding: .5rem 1rem 0;
-      height: calc(100% - 100px);
+      height: calc(100% - 91px);
       overflow: auto;
       display: block;
     }
@@ -125,7 +125,7 @@
       border-radius: .3rem;
       background-color: rgba(255, 255, 255, .5);
       font-size: 1rem;
-      width: 300px;
+      width: 281.5px;
     }
     .footer {
       background-color: rgba(0, 0, 0, .1);
@@ -137,11 +137,13 @@
       padding: .2rem .5rem;
     }
     .note {
-      background-color: white;
+      background-color: rgba(255, 255, 255, .8);
       padding: 1rem;
-      margin: 0;
+      margin: 0 0 1rem;
       border-radius: .3rem;
       border: none;
+      display: block;
+      white-space: pre-wrap;
     }
     textarea {
       font-family: inherit;
@@ -161,9 +163,9 @@
       display: inline-block;
     }
     .pos {
-      color: rgba(0, 0, 0, .5);
+      color: rgba(0, 0, 0, .8);
       background: none;
-      border: 1px solid rgba(0, 0, 0, .5);
+      border: 1px solid rgba(0, 0, 0, .8);
       width: 20px;
       height: 20px;
       border-radius: 20px;
@@ -191,7 +193,7 @@
           <button id="login" class="text">Login</button>
         </td>
         <td class="table-right">
-          <button id="new_walkthrough">Create</button>
+          <button id="new_walkthrough">+ Create</button>
         </td>
       </tr>
     </table>
@@ -205,10 +207,10 @@
     <table class="toolbar">
       <tr>
         <td>
-          <button id="exit_new" class="text">Cancel</button>
+          <button id="exit_new" class="text">✕ Cancel</button>
         </td>
         <td class="table-right">
-          <button id="add_nodes">Add selected</button>
+          <button id="add_nodes">+ Add selected</button>
         </td>
       </tr>
     </table>
@@ -221,7 +223,7 @@
           <input id="walkthrough_name"></input>
         </td>
         <td class="table-right">
-          <button id="save_walkthrough" class="action">Save</button>
+          <button id="save_walkthrough" class="action">✔ Save</button>
         </td>
       </tr>
     </table>
@@ -232,10 +234,10 @@
     <table class="toolbar">
       <tr>
         <td>
-          <button id="exit_walking" class="text">Exit</button>
+          <button id="exit_walking" class="text">✕ Exit</button>
         </td>
         <td class="table-right">
-          <button id="edit_note">Edit note</button>
+          <button id="edit_note">✎ Edit note</button>
         </td>
       </tr>
     </table>
@@ -244,15 +246,15 @@
         <div class="pos"><div id="selected_node_position" class="pos-inner"></div></div>
         <div id="selected_node" class="layer-title"></div>
       </div>
-      <p id="note"></p>
+      <div id="note"></div>
     </div>
     <table class="footer">
       <tr>
         <td>
-          <button id="previous">Previous</button>
+          <button id="previous">← Previous</button>
         </td>
         <td class="table-right">
-          <button id="next" class="action">Next</button>
+          <button id="next" class="action">Next →</button>
         </td>
       </tr>
     </table>
@@ -262,8 +264,8 @@
   <div id="noting_state">
     <table class="toolbar">
       <tr>
-        <td class="table-right">
-          <button id="exit_noting" class="text">Cancel</button>
+        <td>
+          <button id="exit_noting" class="text">← Back</button>
         </td>
       </tr>
     </table>
@@ -272,12 +274,12 @@
         <div class="pos"><div id="editing_node_position" class="pos-inner"></div></div>
         <div id="editing_node" class="layer-title"></div>
       </div>
-      <textarea id="noting" rows="10" cols="36.5" class="note" wrap="soft"></textarea>
+      <textarea id="noting" rows="10" cols="36" class="note" wrap="soft"></textarea>
     </div>
     <table class="footer">
       <tr>
         <td class="table-right">
-          <button id="save_note" class="action">Save</button>
+          <button id="save_note" class="action">✔ Save</button>
         </td>
       </tr>
     </table>
@@ -346,7 +348,7 @@
             nodeListContents += getButton(walkthroughID, 'delete')
           }
         }
-        document.getElementById("nodes_list").innerHTML = nodeListContents;
+        document.getElementById('nodes_list').innerHTML = nodeListContents;
         if (nodes.length > 0) {
           nodes.forEach(node => {
             const id = node.id;
@@ -359,6 +361,8 @@
         if (newOrEditing == 'editing') {
           addWalkthroughListener('delete', walkthroughID + '_wtd');
         }
+        const y = nodes.length * 25;
+        document.getElementById('nodes_list').scrollTo(0, y);
         break;
       case 'editing_clear':
         document.getElementById('walkthrough_name').value = null;
@@ -369,7 +373,7 @@
         document.getElementById('selected_node_position').innerHTML = message.position;
         document.getElementById('note').innerHTML = message.note;
         document.getElementById('note').className = (message.note.length > 0) ? 'note' : null;
-        document.getElementById('edit_note').innerHTML = (message.note.length > 0) ? 'Edit note' : 'Add note';
+        document.getElementById('edit_note').innerHTML = (message.note.length > 0) ? '✎ Edit note' : '+ Add note';
         document.getElementById('edit_note').onclick = () => {
           parent.postMessage({pluginMessage: {
             type: 'note',
@@ -425,7 +429,7 @@
     let styles = null;
     switch(type) {
       case 'start':
-        label = 'Start';
+        label = 'Start →';
         buttonId = id + '_wts';
         styles = 'action';
         break;
