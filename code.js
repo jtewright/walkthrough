@@ -44,6 +44,10 @@ figma.ui.onmessage = msg => {
         case 'next':
             nextNode(null);
             break;
+        case 'back':
+            console.log('todo, implement back');
+            //nextNode(null);
+            break;
         case 'start':
         case 'edit':
         case 'delete':

@@ -49,6 +49,10 @@ figma.ui.onmessage = msg => {
         case 'next': 
             nextNode(null);
             break;
+        case 'back':
+            console.log('todo, implement back');
+            //nextNode(null);
+            break;
         case 'start':
         case 'edit':
         case 'delete':
@@ -173,7 +177,7 @@ function loadNode() {
     Walking through, saving notes
 */
 function nextNode(walkthroughID) {
-    let page =figma.currentPage;
+    let page = figma.currentPage;
     const selected = page.selection;
     // if not walking through and started walkthrough first thingy has been deleted
     // not already walking through

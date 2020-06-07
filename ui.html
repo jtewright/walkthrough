@@ -1,86 +1,83 @@
 <style>
     html, body {
-      font-family: Arial, Helvetica, sans-serif;
+      font-family: "Lucida Console", Monaco, monospace;
       padding: 0;
       margin: 0;
-      background-color: #e5e5e5;
+      background-color: red;
       font-size: 11pt;
       overflow: hidden;
       height: 100%;
     }
-    div {
+    div, p {
       padding: 0;
       margin: 0;
-    }
-    input {
-      font-family: inherit;
-      outline: none;
-      border: none;
-      padding: .3rem .5rem;
-      border-radius: .3rem;
-      background-color: lightgray;
-      margin: 0;
-      font-size: 1rem;
-    }
-    button:hover {
-      color: black;
     }
     button {
       background: none;
       border: none;
       outline: none;
       margin: 0;
-      padding: .4rem .6rem;
+      padding: .3rem .6rem;
       border-radius: .3rem;
-      color: darkblue;
+      color: black;
       font-family: inherit;
       font-size: 1rem;
       font-weight: bold;
       cursor: pointer;
       vertical-align: middle;
     }
+    button:hover {
+      background-color: rgba(0, 0, 0, .1);
+    }
     button.text {
-      color: darkslategrey;
-
+      color: rgba(0, 0, 0, .5);
+      background: none;
     }
     button.text:hover {
-      color: black;
+      background-color: rgba(0, 0, 0, .1);
     }
     button.red {
       width: 100%;
-      background-color: #dddddd;
-      color: darkred;
+      margin-bottom: .5rem;
+      background-color: rgba(0, 0, 0, .1);
+      color: rgba(0, 0, 0, .5);
     }
     button.red:hover {
-      background-color: silver;
+      background-color: rgba(0, 0, 0, .2);
       color: black;
     }
     button.action {
-      background-color: white;
+      background-color: black;
+      color: white;
+      padding: .3rem 1.2rem;
     }
     button.action:hover {
-      background: darkblue;
-      color: white;
+      background: white;
+      color: black;
     }
     button.icon {
-      margin: 0 .5rem 0 0;
-      padding: .2rem;
-      font-size: 1.3rem;
+      margin: 0 .6rem 0 0;
+      padding: .2rem 0 0;
       background: none;
-      color: dimgrey;
+      color: rgba(0, 0, 0, .5);
+      font-size: 1.5rem;
+      font-weight: normal;
+      font-family: sans-serif;
+      vertical-align: middle;
     }
     button.icon:hover {
       color: black;
     }
     button.icon-delete {
       margin: 0;
-      padding: .2rem 0 .2rem;
-      font-size: 1.6rem;
+      padding: 0;
+      font-size: 2rem;
       background: none;
-      color: dimgrey;
+      color: rgba(0, 0, 0, .5);
+      vertical-align: middle;
     }
     button.icon-delete:hover {
-      color: red;
+      color: black;
     }
     table {
       padding: 0;
@@ -91,11 +88,20 @@
     tr {
       margin: 0 0 .5rem 0;
     }
+    td {
+      font-size: 1rem;
+      vertical-align: middle;
+    }
     .list {
       padding: .5rem 1rem;
       height: calc(100% - 105px);
       overflow: auto;
-      scroll-behavior: smooth;
+    }
+    .list::-webkit-scrollbar {
+      display: none;
+    }
+    .list {
+      -ms-overflow-style: none;
     }
     .placeholder {
         color: #a9a9a9;
@@ -104,23 +110,40 @@
         padding: 2rem 1rem;
     }
     .toolbar {
-      background-color: #dddddd;
+      background-color: rgba(0, 0, 0, .2);
       padding: .3rem .4rem .4rem;
       height: 40px;
     }
     .table-right {
       text-align: right;
     }
+    input {
+      font-family: inherit;
+      outline: none;
+      border: none;
+      padding: .3rem .5rem;
+      border-radius: .3rem;
+      background-color: rgba(255, 255, 255, .5);
+      font-size: 1rem;
+      width: 300px;
+    }
     .footer {
-      background-color: #dddddd;
+      background-color: rgba(0, 0, 0, .1);
       position: fixed;
       height: 40px;
       bottom: 0;
       left: 0;
       right: 0;
+      padding: .2rem .5rem;
     }
-    .footer * {
-      width: 100%;
+    .layer-title {
+      margin: 1rem .5rem;
+    }
+    .note {
+      background-color: white;
+      padding: 1rem;
+      margin: 0 .5rem 0 0;
+      border-radius: .3rem;
     }
 </style>
 <html>
@@ -146,7 +169,7 @@
     <table class="toolbar">
       <tr>
         <td>
-          <button id="add_nodes" class="action">Add selected</button>
+          <button id="add_nodes">Add selected</button>
         </td>
         <td class="table-right">
           <button id="exit_new" class="text">Cancel</button>
@@ -162,7 +185,7 @@
           <input id="walkthrough_name"></input>
         </td>
         <td class="table-right">
-          <button id="save_walkthrough">Save</button>
+          <button id="save_walkthrough" class="action">Save</button>
         </td>
       </tr>
     </table>
@@ -170,13 +193,30 @@
 
   <!--State: walking-->
   <div id="walking_state" style="display:none">
-    <div class="toolbar">
-      <button id="next">➜</button>
-      <button id="edit_note">✎</button>
-      <button id="exit_walking">✕</button>
+    <table class="toolbar">
+      <tr>
+        <td>
+          <button id="edit_note">Edit note</button>
+        </td>
+        <td class="table-right">
+          <button id="exit_walking" class="text">Exit</button>
+        </td>
+      </tr>
+    </table>
+    <div class="list">
+      <p id="selected_node" class="layer-title"></p>
+      <p id="note"></p>
     </div>
-    <p id="selected_node" class="layer-title"></p>
-    <p id="note" class="note"></p>
+    <table class="footer">
+      <tr>
+        <td>
+          <button id="back">Back</button>
+        </td>
+        <td class="table-right">
+          <button id="next" class="action">Next</button>
+        </td>
+      </tr>
+    </table>
   </div>
 
   <!--State: noting-->
@@ -248,7 +288,6 @@
           }
         }
         document.getElementById("nodes_list").innerHTML = nodeListContents;
-        document.getElementById("nodes_list").scrollTop = 0;
         if (nodes.length > 0) {
           nodes.forEach(node => {
             const id = node.id;
@@ -269,6 +308,8 @@
       case 'note':
         document.getElementById('selected_node').innerHTML = message.name;
         document.getElementById('note').innerHTML = message.note;
+        document.getElementById('note').className = (message.note.length > 0) ? 'note' : null;
+        document.getElementById('edit_note').innerHTML = (message.note.length > 0) ? 'Edit note' : 'Add note';
         document.getElementById('edit_note').onclick = () => {
           parent.postMessage({pluginMessage: {
             type: 'note',
@@ -303,6 +344,9 @@
   document.getElementById('next').onclick = () => {
     parent.postMessage({ pluginMessage: { type: 'next' } }, '*');
   }
+  document.getElementById('back').onclick = () => {
+    parent.postMessage({ pluginMessage: { type: 'back' } }, '*');
+  }
   document.getElementById('save_note').onclick = () => {
     let note = document.getElementById('noting').value;
     parent.postMessage({ pluginMessage: { type: 'save_note', value: note } }, '*');
@@ -322,7 +366,7 @@
         styles = 'action';
         break;
       case 'edit':
-        label = '✎';
+        label = '⋯';
         buttonId = id + '_wte';
         styles = 'icon';
         break;
