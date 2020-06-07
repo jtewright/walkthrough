@@ -111,11 +111,8 @@ function updateUIState(newState) {
         editingNode = null;
         loadNode();
     }
-    if (currentState == STATE_NOTE && newState == STATE_EDITING) {
-        editingNode = null;
-        updateEditingNodes(false);
-    }
     // changing state
+    const oldState = currentState;
     currentState = newState;
     const message = { type: 'state', state: currentState };
     figma.ui.postMessage(message);
@@ -128,6 +125,10 @@ function updateUIState(newState) {
     }
     if (newState == STATE_NEW) {
         addNodesToWalkthrough(true);
+    }
+    if (oldState == STATE_NOTE && newState == STATE_EDITING) {
+        editingNode = null;
+        updateEditingNodes(false);
     }
 }
 figma.on("close", function () {
@@ -156,7 +157,6 @@ function updateEditingNodes(scroll) {
         return true;
     });
     let uiWalkthrough = {
-        state: currentState,
         id: editingWalkthrough.id,
         name: editingWalkthrough.name,
         nodes: filteredNodes.map(n => {
@@ -166,6 +166,7 @@ function updateEditingNodes(scroll) {
     };
     const message = {
         type: 'editing_update',
+        state: currentState,
         scroll: scroll,
         walkthrough: uiWalkthrough
     };
