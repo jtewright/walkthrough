@@ -1,11 +1,11 @@
 {
   "name": "Walkthrough",
   "id": "842446161433227510",
-  "api": "1.0.0",
+  "api": "1.0.1",
   "main": "code.js",
   "ui": "ui.html",
   "relaunchButtons": [
-    {"command": "relaunch", "name": "🌈 Walkthroughs found", "multipleSelection": true},
-    {"command": "create", "name": "🌈 Create Walkthrough", "multipleSelection": true}
+    {"command": "relaunch", "name": "Walkthroughs found", "multipleSelection": true},
+    {"command": "create", "name": "Create Walkthrough", "multipleSelection": true}
   ]
 }
