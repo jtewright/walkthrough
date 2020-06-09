@@ -355,7 +355,8 @@
         const name = message.walkthrough.name;
         const walkthroughID = message.walkthrough.id;
         const nodes = message.walkthrough.nodes;
-        document.getElementById('walkthrough_name').value = name;
+        const existingName = document.getElementById('walkthrough_name').value;
+        document.getElementById('walkthrough_name').value = existingName ? existingName : name;
         let nodeListContents = '<p class="placeholder">Select some elements and + Add selected</p>';
         if (nodes.length > 0) {
           nodeListContents = '<table>';

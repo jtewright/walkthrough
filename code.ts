@@ -15,6 +15,7 @@ let currentWalkthroughIndex = null;
 let editingWalkthrough = null;
 let editingNode = null;
 let currentState = null;
+let lastState = null;
 
 /*
     Initialising UI
@@ -109,7 +110,7 @@ figma.ui.onmessage = msg => {
 */
 function updateUIState(newState) {
     // cleaning up the state we're exiting from
-    if (currentState == STATE_NEW && newState == STATE_HOME) {
+    if ((currentState == STATE_NEW || currentState == STATE_EDITING) && newState == STATE_HOME) {
         figma.ui.postMessage({type: 'editing_clear'});
         editingWalkthrough = null;
     }
@@ -119,13 +120,9 @@ function updateUIState(newState) {
     if (currentState == STATE_WALKING && newState == STATE_HOME) {
         currentWalkthrough = null;
     }
-    if (currentState == STATE_NOTE && newState == STATE_WALKING) {
-        editingNode = null;
-        loadNode();
-    }
 
     // changing state
-    const oldState = currentState;
+    lastState = currentState;
     currentState = newState;
     const message = {type: 'state', state: currentState};
     figma.ui.postMessage(message);
@@ -137,7 +134,7 @@ function updateUIState(newState) {
         currentWalkthrough = null;
         currentWalkthroughIndex = null;
     }
-    if (oldState == STATE_NOTE && newState == STATE_EDITING) {
+    if (lastState == STATE_NOTE && (newState == STATE_EDITING || newState == STATE_NEW)) {
         editingNode = null;
         updateEditingNodes(false);
     }
@@ -305,7 +302,7 @@ function editNodeNote(nodeID) {
 function saveNote(note) {
     const walkthroughID = currentWalkthrough ? currentWalkthrough.id : editingWalkthrough.id;
     editingNode.setPluginData(walkthroughID, note);
-    updateUIState(currentWalkthrough ? STATE_WALKING : STATE_EDITING);
+    updateUIState(lastState);
     editingNode = null;
     loadNode();
 }
@@ -419,7 +416,6 @@ function saveWalkthrough(name) {
     else {
         walkthroughs = [...walkthroughs, newWalkthrough];
     }
-
     walkthroughsObject = {array: walkthroughs};
     const walkthroughsObjectJSON = JSON.stringify(walkthroughsObject);
     page.setPluginData('walkthroughs', walkthroughsObjectJSON);
@@ -491,7 +487,7 @@ function setRelaunchData() {
 function getRelaunchData() {
     const numberOfWalkthroughs = getWalkthroughsArray().length;
     if (numberOfWalkthroughs > 0) {
-        return { create: '', relaunch: 'This document contains Walkthroughs. Open the Walkthroughs plugin to take a look.'}
+        return { create: '', relaunch: 'This document contains Walkthroughs.'}
     }
     else {
         return { create: '' }
