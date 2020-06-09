@@ -123,6 +123,19 @@
     .list {
       -ms-overflow-style: none;
     }
+    .walkthrough-list {
+      padding: .5rem 1rem 0;
+      height: calc(100% - 55px);
+      overflow: auto;
+      scroll-behavior: smooth;
+      display: block;
+    }
+    .walkthrough-list::-webkit-scrollbar {
+      display: none;
+    }
+    .walkthrough-list {
+      -ms-overflow-style: none;
+    }
     .placeholder {
         color: rgba(0, 0, 0, .5);
         font-weight: bold;
@@ -226,7 +239,7 @@
         </td>
       </tr>
     </table>
-    <div id="walkthrough_list" class="list">
+    <div id="walkthrough_list" class="walkthrough-list">
       <p class="placeholder">Loading...</p>
     </div>
   </div>

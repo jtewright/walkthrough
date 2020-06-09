@@ -56,7 +56,7 @@ figma.ui.onmessage = msg => {
             nextNode(-1, null);
             break;
         case 'exit_noting':
-            updateUIState(currentWalkthrough ? STATE_WALKING : STATE_EDITING);
+            updateUIState(lastState);
             break;
         case 'settings':
             figma.ui.postMessage({ type: 'settings' });
@@ -374,12 +374,15 @@ function removeNode(nodeID, updateNodes) {
     }
 }
 function saveWalkthrough(name) {
+    let newWalkthrough = (currentState == STATE_WALKING) ? currentWalkthrough : editingWalkthrough;
+    if (newWalkthrough.nodes.length == 0) {
+        figma.notify('Please add some elements to your Walkthrough', { timeout: 1000 });
+        return;
+    }
     if (!name || name == undefined) {
         figma.notify('Please name your Walkthrough', { timeout: 1000 });
         return;
     }
-    let page = figma.currentPage;
-    let newWalkthrough = (currentState == STATE_WALKING) ? currentWalkthrough : editingWalkthrough;
     newWalkthrough.name = name;
     let walkthroughsObject = getWalkthroughsObject();
     let walkthroughs = walkthroughsObject.array;
@@ -396,6 +399,7 @@ function saveWalkthrough(name) {
     }
     walkthroughsObject = { array: walkthroughs };
     const walkthroughsObjectJSON = JSON.stringify(walkthroughsObject);
+    let page = figma.currentPage;
     page.setPluginData('walkthroughs', walkthroughsObjectJSON);
     setRelaunchData();
     if (currentState == STATE_EDITING || currentState == STATE_NEW) {
