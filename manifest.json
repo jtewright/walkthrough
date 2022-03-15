@@ -7,5 +7,6 @@
   "relaunchButtons": [
     {"command": "relaunch", "name": "Walkthroughs found", "multipleSelection": true},
     {"command": "create", "name": "Create Walkthrough", "multipleSelection": true}
-  ]
+  ],
+  "editorType": ["figma", "figjam"]
 }
