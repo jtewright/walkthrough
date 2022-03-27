@@ -21,7 +21,7 @@ let lastState = null;
 figma.showUI(__html__);
 figma.ui.resize(400, 400);
 updateUIState(STATE_HOME);
-figma.ui.postMessage({ type: 'settings' });
+loadSettings();
 const relaunchData = getRelaunchData();
 setRelaunchData();
 if (figma.command == 'create') {
@@ -36,6 +36,7 @@ figma.ui.onmessage = msg => {
         case 'state_walking':
         case 'state_editing':
         case 'state_new':
+        case 'state_settings':
             const newState = msg.type.substring(6, msg.type.length);
             updateUIState(newState);
             break;
@@ -49,6 +50,9 @@ figma.ui.onmessage = msg => {
         case 'save_note':
             saveNote(msg.value);
             break;
+        case 'save_settings':
+            saveSettings(msg);
+            break;
         case 'next':
             nextNode(1, null);
             break;
@@ -56,10 +60,17 @@ figma.ui.onmessage = msg => {
             nextNode(-1, null);
             break;
         case 'exit_noting':
+        case 'exit_settings':
             updateUIState(lastState);
             break;
-        case 'settings':
-            figma.ui.postMessage({ type: 'settings' });
+        case 'settings_save':
+            figma.ui.postMessage({ type: 'settings_save' });
+            break;
+        case 'minimize':
+            figma.ui.resize(400, 40);
+            break;
+        case 'maximize':
+            figma.ui.resize(400, 400);
             break;
         case 'start':
         case 'edit':
@@ -371,6 +382,20 @@ function removeNode(nodeID, updateNodes) {
         if (updateNodes == true) {
             updateEditingNodes(false);
         }
+    }
+}
+function saveSettings(msg) {
+    let settings = { color: msg.color };
+    let page = figma.currentPage;
+    const settingsJSON = JSON.stringify(settings);
+    page.setPluginData('walkthroughSettings', settingsJSON);
+}
+function loadSettings() {
+    const settingsJSON = figma.currentPage.getPluginData('walkthroughSettings');
+    if (settingsJSON) {
+        // more settings could be implemented in future
+        const settings = JSON.parse(settingsJSON);
+        figma.ui.postMessage({ type: 'settings_load', color: settings.color });
     }
 }
 function saveWalkthrough(name) {

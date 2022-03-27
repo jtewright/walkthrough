@@ -6,7 +6,7 @@
       font-family: Inter, sans-serif;
       padding: 0;
       margin: 0;
-      background-color: lightgreen;
+      background-color: #CCCCCC;
       font-size: 11pt;
       overflow: hidden;
       height: 100%;
@@ -149,8 +149,12 @@
       height: 40px;
     }
     .table-right {
+      right: 0;
       text-align: right;
       width: 150px;
+    }
+    .table-left {
+      width: 250px;
     }
     input {
       font-family: inherit;
@@ -222,6 +226,19 @@
       vertical-align: middle;
       text-align: center;
     }
+    .settings-container {
+        padding: 1rem;
+    }
+    .settings-input {
+        width: 100%;
+    }
+    .settings-label {
+        margin-bottom: .5rem;
+    }
+    .settings-error {
+        margin-top: .5rem;
+        color: red;
+    }
 </style>
 <!--
   interface
@@ -232,7 +249,7 @@
     <table class="toolbar">
       <tr>
         <td>
-          <button id="settings" class="text">🌈</button>
+          <button id="state_settings" class="text">Settings</button>
         </td>
         <td class="table-right">
           <button id="new_walkthrough" class="action">+ Create</button>
@@ -241,6 +258,25 @@
     </table>
     <div id="walkthrough_list" class="walkthrough-list">
       <p class="placeholder">Loading...</p>
+    </div>
+  </div>
+
+  <!--State: settings-->
+  <div id="settings_state" style="display:block">
+    <table class="toolbar">
+      <tr>
+        <td>
+          <button id="exit_settings" class="text">✕ Cancel</button>
+        </td>
+        <td class="table-right">
+          <button id="settings_save" class="action">Save</button>
+        </td>
+      </tr>
+    </table>
+    <div id="settings" class="settings-container">
+        <div class="settings-label">Theme color 🌈</div>
+        <input id="settings_color" class="settings-input" placeholder="Hex code e.g. #CCCCCC"></input>
+        <div id="settings_error" class="settings-error"></div>
     </div>
   </div>
 
@@ -273,9 +309,9 @@
 
   <!--State: walking-->
   <div id="walking_state" style="display:none">
-    <table class="toolbar">
+    <table class="toolbar" id="toolbar">
       <tr>
-        <td>
+        <td class="table-left">
           <button id="exit_walking" class="text">✕ Exit</button>
         </td>
         <td class="table-right">
@@ -283,7 +319,7 @@
         </td>
       </tr>
     </table>
-    <div class="list">
+    <div class="list" id="list">
       <div class="layer-title-container">
         <div class="pos"><div id="selected_node_position" class="pos-inner"></div></div>
         <div id="selected_node" class="layer-title"></div>
@@ -294,6 +330,10 @@
       <tr>
         <td>
           <button id="previous">← Previous</button>
+        </td>
+        <td>
+          <button id="minimize" class="display:block">↑</button>
+          <button id="maximize" style="display:none">↓</button>
         </td>
         <td class="table-right">
           <button id="next" class="action">Next →</button>
@@ -337,6 +377,7 @@
         document.getElementById('walking_state').style.display = (state == 'walking') ? ("block") : ("none");
         document.getElementById('editing_state').style.display = (state == 'editing' | state == 'new') ? ("block") : ("none");
         document.getElementById('noting_state').style.display = (state == 'note') ? ("block") : ("none");
+        document.getElementById('settings_state').style.display = (state == 'settings') ? ("block") : ("none");
         break;
       case 'walkthrough_list':
         const walkthroughs = message.walkthroughs;
@@ -433,9 +474,20 @@
         document.getElementById('editing_node').innerHTML = message.name;
         document.getElementById('noting').value = message.note;
         break;
-      case 'settings':
-        let bgcolor = getRandomLightColour();
-        document.body.style.backgroundColor = bgcolor;
+      case 'settings_save':
+        let desiredColor = document.getElementById('settings_color').value;
+        if (desiredColor.match(/^#[a-f0-9]{6}$/gi)) {
+            document.body.style.backgroundColor = desiredColor;
+            document.getElementById('settings_error').innerHTML = null;
+            document.getElementById('settings_color').value = null;
+            parent.postMessage({ pluginMessage: { type: 'save_settings', color: desiredColor} }, '*');
+            parent.postMessage({ pluginMessage: { type: 'exit_settings'} }, '*');
+        } else {
+            document.getElementById('settings_error').innerHTML = 'Invalid Hex code';
+        }
+        break;
+      case 'settings_load':
+        document.body.style.backgroundColor = message.color;
         break;
       default:
         console.error('No UI message handler.');
@@ -443,8 +495,15 @@
     }
   }
   // creating walkthrough
-  document.getElementById('settings').onclick = () => {
-    parent.postMessage({ pluginMessage: { type: 'settings'} }, '*');
+  document.getElementById('state_settings').onclick = () => {
+    parent.postMessage({ pluginMessage: { type: 'state_settings'} }, '*');
+  }
+  document.getElementById('exit_settings').onclick = () => {
+    document.getElementById('settings_color').value = null;
+    parent.postMessage({ pluginMessage: { type: 'exit_settings'} }, '*');
+  }
+  document.getElementById('settings_save').onclick = () => {
+    parent.postMessage({ pluginMessage: { type: 'settings_save'} }, '*');
   }
   document.getElementById('new_walkthrough').onclick = () => {
     parent.postMessage({ pluginMessage: { type: 'state_new'} }, '*');
@@ -475,6 +534,20 @@
   }
   document.getElementById('exit_noting').onclick = () => {
     parent.postMessage({ pluginMessage: { type: 'exit_noting'}}, '*');
+  }
+  document.getElementById('minimize').onclick = () => {
+    document.getElementById('toolbar').style.display = ("none");
+    document.getElementById('list').style.display = ("none");
+    document.getElementById('minimize').style.display = ("none");
+    document.getElementById('maximize').style.display = ("block");
+    parent.postMessage({ pluginMessage: { type: 'minimize'}}, '*');
+  }
+  document.getElementById('maximize').onclick = () => {
+    parent.postMessage({ pluginMessage: { type: 'maximize'}}, '*');
+    document.getElementById('toolbar').style.display = ("block");
+    document.getElementById('list').style.display = ("block");
+    document.getElementById('minimize').style.display = ("block");
+    document.getElementById('maximize').style.display = ("none");
   }
   // helper functions
   function getButton(id, type) {
